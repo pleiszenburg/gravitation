@@ -75,13 +75,15 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Faster (pure) numpy implementation(s)
 - Balanced / optimized combinations of numpy, numba and numexpr (for individually both, smaller and larger numbers of bodies)
 - **Rust** backend(s)
-- Go backend(s)
+- **Go** backend(s)
 - Swift backend(s) - if this is at all possible
 - **C** backend(s) with AVX(2) and **[AVX512](https://en.wikipedia.org/wiki/AVX-512)**
 - C backend(s) with CUDA (without PyCUDA)
 - C backend(s) called through cffi (instead of ctypes)
 - C++ backend(s) called through different interfaces
 - Faster CUDA backend(s) in general, with or without PyCUDA
+- **openCL** backend(s), any language
+- ROCr/**ROCm** backend(s), any language
 - **Fortran** backend(s)
 - **Julia** backend(s)
 - **TensorFlow** backend(s), for both CPU and GPU - (theoretically) possible
