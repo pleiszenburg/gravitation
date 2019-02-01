@@ -1,0 +1,15 @@
+__*__
+env*
+*.pyc
+*.ipynb*
+*.o
+*.so
+*.whl
+*.html
+octave-workspace
+*.log
+*.json
+build/
+dist/
+**/kernel/cy*/**/*.c
+*.egg-info

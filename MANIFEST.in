@@ -1,0 +1,4 @@
+recursive-include src/ *.pyx
+recursive-include src/ *.js
+recursive-include src/ *.m
+recursive-exclude src/gravitation/kernel/ cy*/*.c
