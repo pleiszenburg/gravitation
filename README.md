@@ -173,7 +173,7 @@ Plot one or more JSON files with `gravitation plot` for quick exploration.
 
 Available kernels and the maximum number of available threads will be auto-detected.
 
-The default scenario for benchmarks is "galaxy" (a single, galaxy-like constellation of "stars" with a central "heavy body" loosely resembling a back hole). If you call the benchmark worker script `gravitation worker` directly e.g. for testing alternative Python interpreters, The number of bodies in a galaxy can be tuned as follows: `--scenario galaxy --scenario_param '{"stars_len": 2000}'` ("scenario_param" expects a JSON string). Alternatively to `gravitation worker`, you can also start it with `python -c "from gravitation.cli import cli; cli()" worker`.
+The default scenario for benchmarks is "galaxy" (a single, galaxy-like constellation of "stars" with a central "heavy body" loosely resembling a back hole). If you call the benchmark worker script `gravitation worker` directly e.g. for testing alternative Python interpreters, the number of bodies in a galaxy can be tuned as follows: `--scenario galaxy --scenario_param '{"stars_len": 2000}'` ("scenario_param" expects a JSON string). Alternatively to `gravitation worker`, you can also start a worker with `python -c "from gravitation.cli import cli; cli()" worker`.
 
 ### `gravitation`
 
