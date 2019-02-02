@@ -15,7 +15,9 @@ In science and engineering, it is a prominent scenario to use Python as a high l
 
 ## Example
 
-[![screenshot of interactive benchmark plot](demo/benchmark.png?raw=true "screenshot of interactive benchmark plot - click link to see interactive version")](http://gravitation.pleiszenburg.de/)
+[![screenshot of interactive benchmark plot](demo/benchmark.png?raw=true "screenshot of interactive benchmark plot - click on the image to see interactive version")](http://gravitation.pleiszenburg.de/)
+
+*screenshot of interactive benchmark plot - click on the image to see interactive version*
 
 The plot above was generated running the commands below on an Intel *i5-4570* CPU with a Nvidia *GeForce GTX 1050 Ti* graphics card. CPython 3.6.7, GCC 8.2.0, Linux 4.15.0 x86_64, Octave 4.2.2, CUDA Toolkit 9.1, Nvidia driver 390.77. CPython, GCC and Linux Kernel are original distribution binaries of Linux Mint 19.1.
 
