@@ -15,9 +15,11 @@ In science and engineering, it is a prominent scenario to use Python as a high l
 
 ## Example
 
-[![screenshot of interactive benchmark plot](demo/benchmark.png?raw=true "screenshot of interactive benchmark plot - click link to see interactive version")](http://gravitation.pleiszenburg.de/)
+[![screenshot of interactive benchmark plot](demo/benchmark.png?raw=true "screenshot of interactive benchmark plot - click on the image to see interactive version")](http://gravitation.pleiszenburg.de/)
 
-The plot was above generated running the commands below on an Intel *i5-4570* CPU with a Nvidia *GeForce GTX 1050 Ti* graphics card. CPython 3.6.7, GCC 8.2.0, Linux 4.15.0 x86_64, Octave 4.2.2, CUDA Toolkit 9.1, Nvidia driver 390.77. CPython, GCC and Linux Kernel are original distribution binaries of Linux Mint 19.1.
+*screenshot of interactive benchmark plot - click on the image to see interactive version*
+
+The plot above was generated running the commands below on an Intel *i5-4570* CPU with a Nvidia *GeForce GTX 1050 Ti* graphics card. CPython 3.6.7, GCC 8.2.0, Linux 4.15.0 x86_64, Octave 4.2.2, CUDA Toolkit 9.1, Nvidia driver 390.77. CPython, GCC and Linux Kernel are original distribution binaries of Linux Mint 19.1.
 
 ```bash
 # Faster kernels, can work on larger numbers of bodies
@@ -75,13 +77,15 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Faster (pure) numpy implementation(s)
 - Balanced / optimized combinations of numpy, numba and numexpr (for individually both, smaller and larger numbers of bodies)
 - **Rust** backend(s)
-- Go backend(s)
+- **Go** backend(s)
 - Swift backend(s) - if this is at all possible
 - **C** backend(s) with AVX(2) and **[AVX512](https://en.wikipedia.org/wiki/AVX-512)**
 - C backend(s) with CUDA (without PyCUDA)
 - C backend(s) called through cffi (instead of ctypes)
 - C++ backend(s) called through different interfaces
 - Faster CUDA backend(s) in general, with or without PyCUDA
+- **openCL** backend(s), any language
+- ROCr/**ROCm** backend(s), any language
 - **Fortran** backend(s)
 - **Julia** backend(s)
 - **TensorFlow** backend(s), for both CPU and GPU - (theoretically) possible
@@ -89,7 +93,9 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Faster JavaScript in general
 - Parallel JavaScript with workers
 - **Matlab** on original Matlab interpreter (not Octave)
+- Lisp backend(s)
 - Parallel backend(s) based on MPI (in any language)
+- Parallel backend(s) based on Dask (in any language)
 
 ### Kernel-FAQ
 
@@ -128,7 +134,6 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 * [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads?target_os=Linux)
 * C-compiler: [GCC](https://en.wikipedia.org/wiki/GNU_Compiler_Collection) or [Clang/LLVM](https://en.wikipedia.org/wiki/Clang) (consult your Linux distribution's documentation for details)
 * [openMP](https://en.wikipedia.org/wiki/OpenMP) headers (consult your Linux distribution's as well as your compiler's documentation for details)
-* [unbuffer](https://linux.die.net/man/1/unbuffer), usually packaged with "expect"
 * [gnuplot](http://www.gnuplot.info/)
 * [Octave](https://www.gnu.org/software/octave/download.html)
 

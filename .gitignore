@@ -13,3 +13,4 @@ build/
 dist/
 **/kernel/cy*/**/*.c
 *.egg-info
+pip-wheel-metadata/

@@ -28,6 +28,7 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import os
 import queue
 import subprocess
 import threading
@@ -75,7 +76,9 @@ def _read_stream(stream_id, in_queue, out_list, processing):
 def run_command(cmd_list, unbuffer = False, processing = None):
 	"""subprocess.Popen wrapper, reads stdout and stderr in realtime"""
 	if unbuffer:
-		cmd_list = ['unbuffer'] + cmd_list
+		os.environ['PYTHONUNBUFFERED'] = '1'
+	else:
+		os.environ['PYTHONUNBUFFERED'] = '0'
 	if processing is None:
 		processing = print
 	proc = subprocess.Popen(cmd_list, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
