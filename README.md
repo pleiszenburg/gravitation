@@ -133,7 +133,6 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 * [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads?target_os=Linux)
 * C-compiler: [GCC](https://en.wikipedia.org/wiki/GNU_Compiler_Collection) or [Clang/LLVM](https://en.wikipedia.org/wiki/Clang) (consult your Linux distribution's documentation for details)
 * [openMP](https://en.wikipedia.org/wiki/OpenMP) headers (consult your Linux distribution's as well as your compiler's documentation for details)
-* [unbuffer](https://linux.die.net/man/1/unbuffer), usually packaged with "expect"
 * [gnuplot](http://www.gnuplot.info/)
 * [Octave](https://www.gnu.org/software/octave/download.html)
 
