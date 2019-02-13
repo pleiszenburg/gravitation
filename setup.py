@@ -46,10 +46,6 @@ import sysconfig
 # Package version
 __version__ = '0.0.1'
 
-# Just in case someone is actually running this on Windows ...
-if sys.platform.startswith('win'):
-	raise SystemExit('Windows is currently not supported!')
-
 # List all versions of Python which are supported
 confirmed_python_versions = [
 	('Programming Language :: Python :: %s' % x)
