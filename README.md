@@ -94,6 +94,7 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Parallel JavaScript with workers
 - **Matlab** on original Matlab interpreter (not Octave)
 - Parallel backend(s) based on MPI (in any language)
+- Parallel backend(s) based on Dask (in any language)
 
 ### Kernel-FAQ
 
