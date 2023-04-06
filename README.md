@@ -76,6 +76,7 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Faster (pure) Python implementation(s) - "pure" as in "standard-library only"
 - Faster (pure) numpy implementation(s)
 - Balanced / optimized combinations of numpy, numba and numexpr (for individually both, smaller and larger numbers of bodies)
+- [pythran](https://github.com/serge-sans-paille/pythran) backend(s)
 - **Rust** backend(s)
 - **Go** backend(s)
 - Swift backend(s) - if this is at all possible
