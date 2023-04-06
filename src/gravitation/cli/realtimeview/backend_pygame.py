@@ -29,9 +29,10 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import sys
+from typing import List, Optional, Tuple
 
-import click
 import pygame
+from typeguard import typechecked
 
 from ...lib.load import inventory
 from ...lib.simulation import create_simulation
@@ -42,15 +43,20 @@ from ...lib.timing import AverageTimer
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-class realtimeview:
+@typechecked
+class Realtimeview:
+    """
+    viewer based on pygame
+    """
+
     def __init__(
         self,
-        kernel,
-        threads,
-        scenario,
-        scenario_param,
-        steps_per_frame=None,
-        max_iterations=None,
+        kernel: str,
+        threads: int,
+        scenario: str,
+        scenario_param: dict,
+        steps_per_frame: Optional[int] = None,
+        max_iterations: Optional[int] = None,
     ):
         self._max_iterations = max_iterations
         self._iteration_counter = 0
@@ -71,7 +77,7 @@ class realtimeview:
             unit_size=self._universe._screen["unit_size"],
         )
 
-    def _init_canvas(self, spf, unit, unit_size, base=1024):
+    def _init_canvas(self, spf: int, unit: float, unit_size: List[float], base: int = 1024):
         pygame.init()
         self._font_size = 20
         self._font = pygame.font.SysFont("Consolas", self._font_size)
@@ -90,7 +96,7 @@ class realtimeview:
         self._timer_sps.stop()
         self._timer_fps.start()
 
-    def _draw_text(self, text, pos, right=False):
+    def _draw_text(self, text: str, pos: Tuple[float, float], right: bool = False):
         rendered_text = self._font.render(text, True, self._font_color)
         if right:
             self._canvas.blit(
@@ -120,17 +126,17 @@ class realtimeview:
             ]
             pygame.draw.circle(self._canvas, self._mass_color, p, 5)
         self._draw_text(
-            "%.02f F/s" % (1.0e9 / self._timer_fps.avg),
+            f"{1.0e9 / self._timer_fps.avg:.02f} F/s",
             (self._pixel_size[0], 0),
             right=True,
         )
         self._draw_text(
-            "%.02f S/s" % (1.0e9 / self._timer_sps.avg),
+            f"{1.0e9 / self._timer_sps.avg:.02f} S/s",
             (self._pixel_size[0], self._font_size),
             right=True,
         )
         self._draw_text(
-            "%.01e s/S" % (self._timer_sps.avg / 1.0e9),
+            f"{self._timer_sps.avg * 1.0e-9:01e} s/S",
             (self._pixel_size[0], 2 * self._font_size),
             right=True,
         )

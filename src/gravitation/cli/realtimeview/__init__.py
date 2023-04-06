@@ -34,6 +34,7 @@ import os
 
 import click
 import psutil
+from typeguard import typechecked
 
 from ...lib.load import inventory
 
@@ -48,7 +49,8 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-def _get_backends():
+@typechecked
+def _get_backends() -> list[str]:
     """auto-detects backends"""
     return sorted(
         [
@@ -111,26 +113,32 @@ def _get_backends():
     help="number of threads/processes for parallel implementations",
 )
 def realtimeview(
-    kernel, scenario, scenario_param, steps_per_frame, max_iterations, backend, threads
+    kernel: str,
+    scenario: str,
+    scenario_param: str,
+    steps_per_frame: int,
+    max_iterations: int,
+    backend: str,
+    threads: int,
 ):
     """view a simulation progressing in realtime"""
 
     scenario_param = json.loads(scenario_param)
     threads = int(threads)
 
-    view_param_pos = (
+    args = (
         kernel,
         threads,
         scenario,
         scenario_param,
     )
-    view_param_kw = {
-        "steps_per_frame": None if steps_per_frame == -1 else steps_per_frame,
-        "max_iterations": None if max_iterations == -1 else max_iterations,
-    }
+    kwargs = dict(
+        steps_per_frame = None if steps_per_frame == -1 else steps_per_frame,
+        max_iterations = None if max_iterations == -1 else max_iterations,
+    )
 
-    viewer = importlib.import_module(
-        "gravitation.cli.realtimeview.backend_%s" % backend
-    ).realtimeview
+    Realtimeview = importlib.import_module(
+        f"gravitation.cli.realtimeview.backend_{backend:s}"
+    ).Realtimeview
 
-    viewer(*view_param_pos, **view_param_kw).loop()
+    Realtimeview(*args, **kwargs).loop()
