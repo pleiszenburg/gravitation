@@ -30,87 +30,98 @@ specific language governing rights and limitations under the License.
 
 import copy
 import json
+from typing import List
 
 import click
+from typeguard import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-def _parse_linestr_to_linedict(line_str):
+class BenchmarkLogError(Exception):
+    pass
+
+
+@typechecked
+def _parse_linestr_to_linedict(line: str) -> dict:
     """parse single line from log (json str) to python dict"""
     try:
-        return json.loads(line_str)
+        return json.loads(line)
     except json.decoder.JSONDecodeError:
-        return {"log": "JSON_ERROR", "str": line_str}
+        return {"log": "JSON_ERROR", "str": line}
 
 
-def _parse_itemstr_to_itemdict(item_str):
+@typechecked
+def _parse_itemstr_to_itemdict(raw: str) -> dict:
     """parse log of one full benchmark worker run to one single dict"""
 
-    item_dict = {}
+    item = {}
 
-    line_list = [
+    lines = [
         _parse_linestr_to_linedict(line)
-        for line in item_str.split("\n")
+        for line in raw.split("\n")
         if line.strip() != ""
     ]
 
-    errors = [line_dict for line_dict in line_list if line_dict["log"] == "JSON_ERROR"]
+    errors = [line for line in lines if line["log"] == "JSON_ERROR"]
+    if len(errors) != 0:
+        for idx, error in enumerate(errors):
+            print(f'=== ERROR {idx+1:d} ===')
+            print(error['str'])
+        raise BenchmarkLogError("benchmark log has non-JSON components, likely errors")
+
+    errors = [line for line in lines if line["log"] == "ERROR"]
     if len(errors) != 0:
         print(errors)
-        raise SyntaxError("benchmark log has non-JSON components, likely errors")
+        raise BenchmarkLogError("benchmark has errors")
 
-    errors = [line_dict for line_dict in line_list if line_dict["log"] == "ERROR"]
-    if len(errors) != 0:
-        print(errors)
-        raise SyntaxError("benchmark has errors")
-
-    input = [line_dict for line_dict in line_list if line_dict["log"] == "INPUT"]
-    if len(input) > 1:
-        raise SyntaxError("more than one INPUT log per benchmark worker run")
-    if len(input) < 1:
-        raise SyntaxError("INPUT log missing in benchmark worker run")
-    input = copy.deepcopy(input)
-    input[0].pop("log")
-    item_dict["meta"] = input[0]
+    input_ = [line for line in lines if line["log"] == "INPUT"]
+    if len(input_) > 1:
+        raise BenchmarkLogError("more than one INPUT log per benchmark worker run")
+    if len(input_) < 1:
+        raise BenchmarkLogError("INPUT log missing in benchmark worker run")
+    input_ = copy.deepcopy(input_)
+    input_[0].pop("log")
+    item["meta"] = input_[0]
 
     size = copy.deepcopy(
-        [line_dict for line_dict in line_list if line_dict["log"] == "SIZE"]
+        [line for line in lines if line["log"] == "SIZE"]
     )
     if len(size) > 1:
-        raise SyntaxError("more than one SIZE log per benchmark worker run")
+        raise BenchmarkLogError("more than one SIZE log per benchmark worker run")
     if len(size) < 1:
-        raise SyntaxError("SIZE log missing in benchmark worker run")
-    item_dict["meta"]["simulation"]["size"] = size[0]["value"]
+        raise BenchmarkLogError("SIZE log missing in benchmark worker run")
+    item["meta"]["simulation"]["size"] = size[0]["value"]
 
-    item_dict["runtime"] = [
-        line_dict["runtime"] for line_dict in line_list if line_dict["log"] == "STEP"
+    item["runtime"] = [
+        line["runtime"] for line in lines if line["log"] == "STEP"
     ]
-    item_dict["gctime"] = [
-        line_dict["gctime"] for line_dict in line_list if line_dict["log"] == "STEP"
+    item["gctime"] = [
+        line["gctime"] for line in lines if line["log"] == "STEP"
     ]
 
     counter = [
-        line_dict["counter"] for line_dict in line_list if line_dict["log"] == "STEP"
+        line["counter"] for line in lines if line["log"] == "STEP"
     ]
     if len(counter) == 0:
-        raise SyntaxError("benchmark did not run any steps")
+        raise BenchmarkLogError("benchmark did not run any steps")
     if counter != list(range(counter[0], len(counter) + counter[0])):
-        raise SyntaxError("benchmark has unexpected sequence of steps")
+        raise BenchmarkLogError("benchmark has unexpected sequence of steps")
 
-    if line_list[-1] != {"log": "EXIT", "msg": "OK"}:
-        raise SyntaxError("benchmark did not exit properly")
+    if lines[-1] != {"log": "EXIT", "msg": "OK"}:
+        raise BenchmarkLogError("benchmark did not exit properly")
 
-    return item_dict
+    return item
 
 
-def _parse_logstr_to_datalist(log_str):
+@typechecked
+def _parse_logstr_to_datalist(log: str) -> List[dict]:
     """parse a benchmark log consisting of multiple worker runs to list of dict"""
     return [
         _parse_itemstr_to_itemdict(item)
-        for item in log_str.split('{"log": "START"}\n')
+        for item in log.split('{"log": "START"}\n')
         if item.strip() != ""
     ]
 
