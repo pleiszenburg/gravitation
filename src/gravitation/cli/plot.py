@@ -44,7 +44,7 @@ import click
 @click.option(
     "--logfile",
     "-l",
-    default="benchmark.json",
+    default=["benchmark.json"],
     type=click.File("r"),
     show_default=True,
     multiple=True,
