@@ -8,7 +8,7 @@ https://github.com/pleiszenburg/gravitation
 
 	src/gravitation/kernel/_lib1_/lib.c: C single-thread core
 
-	Copyright (C) 2019 Sebastian M. Ernst <ernst@pleiszenburg.de>
+	Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
 <LICENSE_BLOCK>
 The contents of this file are subject to the GNU General Public License

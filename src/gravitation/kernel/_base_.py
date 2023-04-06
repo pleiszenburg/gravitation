@@ -6,9 +6,9 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-	src/gravitation/kernel/_base_.py: Base class, all kernels derive from it
+    src/gravitation/kernel/_base_.py: Base class, all kernels derive from it
 
-	Copyright (C) 2019 Sebastian M. Ernst <ernst@pleiszenburg.de>
+    Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
 <LICENSE_BLOCK>
 The contents of this file are subject to the GNU General Public License

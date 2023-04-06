@@ -7,9 +7,9 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-	src/gravitation/kernel/cy2/core.pyx: cy2 kernel cython core
+    src/gravitation/kernel/cy2/core.pyx: cy2 kernel cython core
 
-	Copyright (C) 2019 Sebastian M. Ernst <ernst@pleiszenburg.de>
+    Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
 <LICENSE_BLOCK>
 The contents of this file are subject to the GNU General Public License
