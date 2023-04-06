@@ -46,7 +46,7 @@ def _add_commands(ctx):
         if not item.startswith("_")
     ):
         ctx.add_command(
-            getattr(importlib.import_module("gravitation.cli.%s" % cmd), cmd)
+            getattr(importlib.import_module(f"gravitation.cli.{cmd:s}"), cmd)
         )
 
 
