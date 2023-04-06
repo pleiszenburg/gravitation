@@ -29,7 +29,7 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 __longname__ = 'numpy-backend (2)'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __description__ = 'numpy backend, optimized array layout, stage 2 also numpy'
 __requirements__ = ['numpy']
 __externalrequirements__ = []
@@ -92,14 +92,14 @@ class universe(universe_base):
 		np.add.reduce(self.distance_sqv[:k], axis = 1, out = self.distance_sq[:k])
 		np.sqrt(self.distance_sq[:k], out = self.distance_inv[:k])
 		np.divide(1.0, self.distance_inv[:k], out = self.distance_inv[:k])
-		np.multiply(self.relative_r[:k], self.distance_inv[:k].reshape(k, 1), out = self.relative_r[:k])
+		np.multiply(self.relative_r[:k], self.distance_inv[:k, None], out = self.relative_r[:k])
 		np.divide(self._G, self.distance_sq[:k], out = self.a_factor[:k])
 		np.multiply(self.a_factor[:k], self.mass_m_array[i+1:], out = self.a1[:k])
 		np.multiply(self.a_factor[:k], self.mass_m_array[i], out = self.a2[:k])
-		np.multiply(self.relative_r[:k], self.a1[:k].reshape(k, 1), out = self.a1r[:k])
+		np.multiply(self.relative_r[:k], self.a1[:k, None], out = self.a1r[:k])
 		np.add.reduce(self.a1r[:k], axis = 0, out = self.a1v)
 		np.subtract(self.mass_a_array[i,:], self.a1v, out = self.mass_a_array[i,:])
-		np.multiply(self.relative_r[:k], self.a2[:k].reshape(k, 1), out = self.a2r[:k])
+		np.multiply(self.relative_r[:k], self.a2[:k, None], out = self.a2r[:k])
 		np.add(self.mass_a_array[i+1:,:], self.a2r[:k], out = self.mass_a_array[i+1:,:])
 
 	def step_stage1(self):
