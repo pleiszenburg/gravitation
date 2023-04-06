@@ -62,8 +62,9 @@ def _process_data(kernel, threads, bodies, results_dict, outputlines_list, fh, d
         outputlines_list.append(msg_line)
         try:
             msg = json.loads(msg_line)
-        except:
-            return
+        except Exception as e:
+            print(msg_line)
+            raise e
         results_kernel_dict = results_dict[kernel][threads]
         if msg["log"] == "BEST_TIME":
             if bodies not in results_kernel_dict.keys():
@@ -228,7 +229,7 @@ def benchmark(
     }
     outputlines_list = []
 
-    fh = open(logfile, "w")
+    fh = open(logfile, "w", encoding = 'utf-8')
 
     def shutdown():
         fh.close()
