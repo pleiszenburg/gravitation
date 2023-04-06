@@ -31,6 +31,9 @@ specific language governing rights and limitations under the License.
 import ast
 import importlib
 import os
+from typing import Any, Type
+
+from typeguard import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -43,18 +46,19 @@ class _inventory(dict):
     def __init__(self):
         super().__init__()
         path = os.path.join(os.path.dirname(__file__), "..", "kernel")
-        kernels = [
+        kernels = (
             (item[:-3], True) if item.lower().endswith(".py") else (item, False)
             for item in os.listdir(path)
             if not item.startswith("_")
-        ]
+        )
         self.update({name: _kernel(path, name, isfile) for name, isfile in kernels})
 
 
+@typechecked
 class _kernel:
     """kernel descriptor with lazy loading of kernel module, class and meta data"""
 
-    def __init__(self, path, name, isfile):
+    def __init__(self, path: str, name: str, isfile: bool):
         self._path = path
         self._name = name
         self._isfile = isfile
@@ -62,19 +66,19 @@ class _kernel:
         self._src = None
         self._meta = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """provides access to kernel class constructor"""
         if self._module is None:
             raise SyntaxError("kernel module has not been loaded")
         return self._module.universe(*args, **kwargs)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         """provides access to kernel meta data dict"""
         if self._meta is None:
             raise SyntaxError("kernel metadata has not been loaded")
         return self._meta[key]
 
-    def get_class(self):
+    def get_class(self) -> Type:
         """returns kernel class"""
         if self._module is None:
             raise SyntaxError("kernel module has not been loaded")
@@ -95,7 +99,7 @@ class _kernel:
             for k, v in _get_vars(
                 self._src,
                 *[
-                    "__%s__" % item
+                    f"__{item:s}__"
                     for item in (
                         "longname",
                         "version",
@@ -114,7 +118,7 @@ class _kernel:
 
     def load_module(self):
         """actually imports kernel module"""
-        self._module = importlib.import_module("gravitation.kernel.%s" % self._name)
+        self._module = importlib.import_module(f"gravitation.kernel.{self._name:s}")
 
     def keys(self):
         """provides access to kernel meta data dict keys"""
@@ -128,20 +132,22 @@ class _kernel:
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-def _get_vars(src, *names, default=None):
+@typechecked
+def _get_vars(src, *names: str, default: Any = None) -> dict:
     tree = ast.parse(src)
-    out_dict = {name: default for name in names}
+    out = {name: default for name in names}
     for item in tree.body:
         if not isinstance(item, ast.Assign):
             continue
         for target in item.targets:
             if target.id not in names:
                 continue
-            out_dict[target.id] = _parse_tree(item.value)
-    return out_dict
+            out[target.id] = _parse_tree(item.value)
+    return out
 
 
-def _parse_tree(leaf):
+@typechecked
+def _parse_tree(leaf: Any) -> Any:
     if isinstance(leaf, ast.Str) or isinstance(leaf, ast.Bytes):
         return leaf.s
     elif isinstance(leaf, ast.Num):
@@ -160,7 +166,7 @@ def _parse_tree(leaf):
     elif isinstance(leaf, ast.Set):
         return {_parse_tree(leaf_item) for leaf_item in leaf.elts}
     else:
-        raise SyntaxError("unhandled type: %s (%s)" % (str(leaf), str(dir(leaf))))
+        raise SyntaxError(f"unhandled type: {str(leaf):s} ({str(dir(leaf)):s})")
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
