@@ -74,9 +74,10 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 **Contributions are highly welcome**:
 
 - Faster (pure) Python implementation(s) - "pure" as in "standard-library only"
-- Faster (pure) numpy implementation(s)
-- Balanced / optimized combinations of numpy, numba and numexpr (for individually both, smaller and larger numbers of bodies)
+- Faster (pure) `numpy` implementation(s)
+- Balanced / optimized combinations of `numpy`, `numba` and `numexpr` (for individually both, smaller and larger numbers of bodies)
 - [pythran](https://github.com/serge-sans-paille/pythran) backend(s)
+- Kernel(s) compiled with [mypyc](https://github.com/mypyc/mypyc)
 - **Rust** backend(s)
 - **Go** backend(s)
 - Swift backend(s) - if this is at all possible
@@ -97,6 +98,8 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Lisp backend(s)
 - Parallel backend(s) based on MPI (in any language)
 - Parallel backend(s) based on Dask (in any language)
+- Kernel / test based on [codon](https://github.com/exaloop/codon)
+- Test runs with `pypy`
 
 ### Kernel-FAQ
 
@@ -242,7 +245,7 @@ Options:
 ### `gravitation analyze`
 
 ```
-(env) user@box:~> gravitation analyze --help  
+(env) user@box:~> gravitation analyze --help
 Usage: gravitation analyze [OPTIONS]
 
   analyze benchmark logfile
