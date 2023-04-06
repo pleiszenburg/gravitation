@@ -1,4 +1,7 @@
 
+black:
+	black .
+
 compile_clean:
 	-rm -r build/*
 	find src/ -name '*.pyc' -exec rm -f {} +

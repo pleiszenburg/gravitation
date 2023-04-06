@@ -194,6 +194,7 @@ setup(
 		# 'torch',
 		],
 	extras_require = {'dev': [
+        'black',
 		# 'pytest',
 		'python-language-server',
 		'setuptools',
