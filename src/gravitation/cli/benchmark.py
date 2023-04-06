@@ -33,7 +33,7 @@ import json
 import math
 import shutil
 
-import asciiplotlib as apl
+import termplotlib as tpl
 import click
 import psutil
 
@@ -79,7 +79,7 @@ def _process_data(kernel, threads, bodies, results_dict, outputlines_list, fh, d
         x = sorted(list(results_kernel_dict.keys()))
         y = [results_kernel_dict[n] for n in x]
         t = shutil.get_terminal_size((80, 20))
-        fig = apl.figure()
+        fig = tpl.figure()
         fig.plot(
             x,
             y,
