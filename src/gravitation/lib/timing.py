@@ -29,71 +29,85 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 try:
-	from time import time_ns
-except ImportError: # CPython <= 3.6
-	from time import time as _time_
-	time_ns = lambda: int(_time_() * 1e9)
+    from time import time_ns
+except ImportError:  # CPython <= 3.6
+    from time import time as _time_
+
+    time_ns = lambda: int(_time_() * 1e9)
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 class best_run_timer:
-	"""looks for best runtime, infinite number of recorded runtimes / states:
-	based on walltime (clocking GPU time is tricky), as little overhead as possible"""
-	def __init__(self):
-		self._state = []
-		self._running = False
-		self._lower = None
-	def avg(self):
-		"""returns average over all recorded runtimes / states [ns as int]"""
-		if len(self._state) == 0:
-			raise SyntaxError('Nothing has been recorded.')
-		return sum(self._state) // len(self._state)
-	def min(self):
-		"""returns minimum of all recorded runtimes / states [ns as int]"""
-		if len(self._state) == 0:
-			raise SyntaxError('Nothing has been recorded.')
-		return min(self._state)
-	def sum(self):
-		"""returns sum of all recorded runtimes / states [ns as int]"""
-		if len(self._state) == 0:
-			raise SyntaxError('Nothing has been recorded.')
-		return sum(self._state)
-	def start(self):
-		"""starts a timing run"""
-		if self._running:
-			raise SyntaxError('Timer is running!')
-		self._running = True
-		self._lower = time_ns()
-	def stop(self):
-		"""stops a timing run and returns runtime [ns as int]"""
-		upper = time_ns()
-		if not self._running:
-			raise SyntaxError('Timer is NOT running!')
-		runtime = upper - self._lower
-		self._lower = None
-		self._running = False
-		self._state.append(runtime)
-		return runtime
+    """looks for best runtime, infinite number of recorded runtimes / states:
+    based on walltime (clocking GPU time is tricky), as little overhead as possible"""
+
+    def __init__(self):
+        self._state = []
+        self._running = False
+        self._lower = None
+
+    def avg(self):
+        """returns average over all recorded runtimes / states [ns as int]"""
+        if len(self._state) == 0:
+            raise SyntaxError("Nothing has been recorded.")
+        return sum(self._state) // len(self._state)
+
+    def min(self):
+        """returns minimum of all recorded runtimes / states [ns as int]"""
+        if len(self._state) == 0:
+            raise SyntaxError("Nothing has been recorded.")
+        return min(self._state)
+
+    def sum(self):
+        """returns sum of all recorded runtimes / states [ns as int]"""
+        if len(self._state) == 0:
+            raise SyntaxError("Nothing has been recorded.")
+        return sum(self._state)
+
+    def start(self):
+        """starts a timing run"""
+        if self._running:
+            raise SyntaxError("Timer is running!")
+        self._running = True
+        self._lower = time_ns()
+
+    def stop(self):
+        """stops a timing run and returns runtime [ns as int]"""
+        upper = time_ns()
+        if not self._running:
+            raise SyntaxError("Timer is NOT running!")
+        runtime = upper - self._lower
+        self._lower = None
+        self._running = False
+        self._state.append(runtime)
+        return runtime
+
 
 class average_timer(best_run_timer):
-	"""looks for best runtime, limited number of recorded runtimes / states:
-	based on walltime (clocking GPU time is tricky), as little overhead as possible"""
-	def __init__(self, maxlen):
-		super().__init__()
-		self._maxlen = maxlen
-	def stop(self):
-		"""stops a timing run and returns runtime [ns as int],
-		ensures maximum number of runtimes"""
-		runtime = super().stop()
-		if len(self._state) > self._maxlen:
-			self._state.pop(0)
-		return runtime
+    """looks for best runtime, limited number of recorded runtimes / states:
+    based on walltime (clocking GPU time is tricky), as little overhead as possible"""
+
+    def __init__(self, maxlen):
+        super().__init__()
+        self._maxlen = maxlen
+
+    def stop(self):
+        """stops a timing run and returns runtime [ns as int],
+        ensures maximum number of runtimes"""
+        runtime = super().stop()
+        if len(self._state) > self._maxlen:
+            self._state.pop(0)
+        return runtime
+
 
 class elapsed_timer:
-	"""keeps track of time elapsed since initialization"""
-	def __init__(self):
-		self._state = time_ns()
-	def __call__(self):
-		return time_ns() - self._state
+    """keeps track of time elapsed since initialization"""
+
+    def __init__(self):
+        self._state = time_ns()
+
+    def __call__(self):
+        return time_ns() - self._state

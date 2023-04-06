@@ -28,17 +28,17 @@ specific language governing rights and limitations under the License.
 # KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__longname__ = 'octave-backend 4'
-__version__ = '0.0.1'
-__description__ = 'octave-backend based on oct2py, parallel with python multiprocessing'
-__requirements__ = ['oct2py']
-__externalrequirements__ = ['octave']
-__interpreters__ = ['python3']
+__longname__ = "octave-backend 4"
+__version__ = "0.0.1"
+__description__ = "octave-backend based on oct2py, parallel with python multiprocessing"
+__requirements__ = ["oct2py"]
+__externalrequirements__ = ["octave"]
+__interpreters__ = ["python3"]
 __parallel__ = True
-__license__ = 'GPLv2'
+__license__ = "GPLv2"
 __authors__ = [
-	'Sebastian M. Ernst <ernst@pleiszenburg.de>',
-	]
+    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
+]
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT/EXPORT

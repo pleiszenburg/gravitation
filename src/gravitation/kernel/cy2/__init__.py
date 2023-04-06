@@ -28,17 +28,17 @@ specific language governing rights and limitations under the License.
 # KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__longname__ = 'cython-backend 2'
-__version__ = '0.0.1'
-__description__ = 'pure cython implementation'
-__requirements__ = ['cython']
-__externalrequirements__ = ['gcc']
-__interpreters__ = ['python3']
+__longname__ = "cython-backend 2"
+__version__ = "0.0.1"
+__description__ = "pure cython implementation"
+__requirements__ = ["cython"]
+__externalrequirements__ = ["gcc"]
+__interpreters__ = ["python3"]
 __parallel__ = False
-__license__ = 'GPLv2'
+__license__ = "GPLv2"
 __authors__ = [
-	'Sebastian M. Ernst <ernst@pleiszenburg.de>',
-	]
+    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
+]
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT/EXPORT

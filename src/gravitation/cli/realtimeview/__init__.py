@@ -41,73 +41,96 @@ from ...lib.load import inventory
 # CONST
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-MAX_TREADS = psutil.cpu_count(logical = True)
+MAX_TREADS = psutil.cpu_count(logical=True)
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 def _get_backends():
-	"""auto-detects backends"""
-	return sorted([
-		item[8:-3] if item.lower().endswith('.py') else item[8:]
-		for item in os.listdir(os.path.dirname(__file__))
-		if item.startswith('backend_')
-		])
+    """auto-detects backends"""
+    return sorted(
+        [
+            item[8:-3] if item.lower().endswith(".py") else item[8:]
+            for item in os.listdir(os.path.dirname(__file__))
+            if item.startswith("backend_")
+        ]
+    )
 
-@click.command(short_help = 'view a simulation progressing in realtime')
-@click.option(
-	'--kernel', '-k',
-	type = click.Choice(sorted(list(inventory.keys()))), required = True,
-	help = 'name of kernel module',
-	)
-@click.option(
-	'--scenario',
-	default = 'galaxy', type = str, show_default = True,
-	help = 'what to simulate',
-	)
-@click.option(
-	'--scenario_param',
-	default = '{}', type = str, show_default = True,
-	help = 'JSON string with scenario parameters',
-	)
-@click.option(
-	'--steps_per_frame',
-	default = -1, type = int, show_default = True,
-	help = 'simulation steps per frame, use scenario default if -1',
-	)
-@click.option(
-	'--max_iterations',
-	default = -1, type = int, show_default = True,
-	help = 'maximum number of simulation steps, no maximum if -1',
-	)
-@click.option(
-	'--backend',
-	default = _get_backends()[0], type = click.Choice(_get_backends()), show_default = True,
-	help = 'plot backend',
-	)
-@click.option(
-	'--threads', '-p',
-	default = '1', type = click.Choice([str(i) for i in range(1, MAX_TREADS + 1)]),
-	show_default = True,
-	help = 'number of threads/processes for parallel implementations',
-	)
-def realtimeview(kernel, scenario, scenario_param, steps_per_frame, max_iterations, backend, threads):
-	"""view a simulation progressing in realtime"""
 
-	scenario_param = json.loads(scenario_param)
-	threads = int(threads)
+@click.command(short_help="view a simulation progressing in realtime")
+@click.option(
+    "--kernel",
+    "-k",
+    type=click.Choice(sorted(list(inventory.keys()))),
+    required=True,
+    help="name of kernel module",
+)
+@click.option(
+    "--scenario",
+    default="galaxy",
+    type=str,
+    show_default=True,
+    help="what to simulate",
+)
+@click.option(
+    "--scenario_param",
+    default="{}",
+    type=str,
+    show_default=True,
+    help="JSON string with scenario parameters",
+)
+@click.option(
+    "--steps_per_frame",
+    default=-1,
+    type=int,
+    show_default=True,
+    help="simulation steps per frame, use scenario default if -1",
+)
+@click.option(
+    "--max_iterations",
+    default=-1,
+    type=int,
+    show_default=True,
+    help="maximum number of simulation steps, no maximum if -1",
+)
+@click.option(
+    "--backend",
+    default=_get_backends()[0],
+    type=click.Choice(_get_backends()),
+    show_default=True,
+    help="plot backend",
+)
+@click.option(
+    "--threads",
+    "-p",
+    default="1",
+    type=click.Choice([str(i) for i in range(1, MAX_TREADS + 1)]),
+    show_default=True,
+    help="number of threads/processes for parallel implementations",
+)
+def realtimeview(
+    kernel, scenario, scenario_param, steps_per_frame, max_iterations, backend, threads
+):
+    """view a simulation progressing in realtime"""
 
-	view_param_pos = (
-		kernel, threads, scenario, scenario_param,
-		)
-	view_param_kw = {
-		'steps_per_frame': None if steps_per_frame == -1 else steps_per_frame,
-		'max_iterations': None if max_iterations == -1 else max_iterations,
-		}
+    scenario_param = json.loads(scenario_param)
+    threads = int(threads)
 
-	viewer = importlib.import_module(
-		'gravitation.cli.realtimeview.backend_%s' % backend
-		).realtimeview
+    view_param_pos = (
+        kernel,
+        threads,
+        scenario,
+        scenario_param,
+    )
+    view_param_kw = {
+        "steps_per_frame": None if steps_per_frame == -1 else steps_per_frame,
+        "max_iterations": None if max_iterations == -1 else max_iterations,
+    }
 
-	viewer(*view_param_pos, **view_param_kw).loop()
+    viewer = importlib.import_module(
+        "gravitation.cli.realtimeview.backend_%s" % backend
+    ).realtimeview
+
+    viewer(*view_param_pos, **view_param_kw).loop()

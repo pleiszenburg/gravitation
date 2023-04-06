@@ -28,17 +28,17 @@ specific language governing rights and limitations under the License.
 # KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__longname__ = 'python-backend (2)'
-__version__ = '0.0.1'
-__description__ = 'pure python backend, optimization experiment'
+__longname__ = "python-backend (2)"
+__version__ = "0.0.1"
+__description__ = "pure python backend, optimization experiment"
 __requirements__ = []
 __externalrequirements__ = []
-__interpreters__ = ['python3', 'pypy3']
+__interpreters__ = ["python3", "pypy3"]
 __parallel__ = False
-__license__ = 'GPLv2'
+__license__ = "GPLv2"
 __authors__ = [
-	'Sebastian M. Ernst <ernst@pleiszenburg.de>',
-	]
+    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
+]
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
@@ -52,20 +52,20 @@ from ._base_ import universe_base
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 class universe(universe_base):
+    def update_pair(self, pm1, pm2):
+        relative_r = [(r1 - r2) for r1, r2 in zip(pm1._r, pm2._r)]
+        distance_sq = sum([r**2 for r in relative_r])
+        distance_inv = 1.0 / math.sqrt(distance_sq)
+        relative_r = [r * distance_inv for r in relative_r]
+        a_factor = self._G / distance_sq
+        a1 = a_factor * pm2._m
+        a2 = a_factor * pm1._m
+        pm1._a[:] = [a - r * a1 for r, a in zip(relative_r, pm1._a)]
+        pm2._a[:] = [a + r * a2 for r, a in zip(relative_r, pm2._a)]
 
-	def update_pair(self, pm1, pm2):
-		relative_r = [(r1 - r2) for r1, r2 in zip(pm1._r, pm2._r)]
-		distance_sq = sum([r ** 2 for r in relative_r])
-		distance_inv = 1.0 / math.sqrt(distance_sq)
-		relative_r = [r * distance_inv for r in relative_r]
-		a_factor = self._G / distance_sq
-		a1 = a_factor * pm2._m
-		a2 = a_factor * pm1._m
-		pm1._a[:] = [a - r * a1 for r, a in zip(relative_r, pm1._a)]
-		pm2._a[:] = [a + r * a2 for r, a in zip(relative_r, pm2._a)]
-
-	def step_stage1(self):
-		for pm1_index, pm1 in enumerate(self._mass_list[:-1]):
-			for pm2_index, pm2 in enumerate(self._mass_list[pm1_index+1:]):
-				self.update_pair(pm1, pm2)
+    def step_stage1(self):
+        for pm1_index, pm1 in enumerate(self._mass_list[:-1]):
+            for pm2_index, pm2 in enumerate(self._mass_list[pm1_index + 1 :]):
+                self.update_pair(pm1, pm2)

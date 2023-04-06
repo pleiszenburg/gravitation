@@ -28,17 +28,17 @@ specific language governing rights and limitations under the License.
 # KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__longname__ = 'numpy-backend (1)'
-__version__ = '0.0.1'
-__description__ = 'numpy backend'
-__requirements__ = ['numpy']
+__longname__ = "numpy-backend (1)"
+__version__ = "0.0.1"
+__description__ = "numpy backend"
+__requirements__ = ["numpy"]
 __externalrequirements__ = []
-__interpreters__ = ['python3']
+__interpreters__ = ["python3"]
 __parallel__ = False
-__license__ = 'GPLv2'
+__license__ = "GPLv2"
 __authors__ = [
-	'Sebastian M. Ernst <ernst@pleiszenburg.de>',
-	]
+    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
+]
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
@@ -52,57 +52,71 @@ from ._base_ import universe_base
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 class universe(universe_base):
+    def start_kernel(self):
+        self.DTYPE = self._dtype
+        # Get const values
+        self.MASS_LEN = len(self)
+        self.SIM_DIM = len(self._mass_list[0]._r)
+        # Allocate memory: Object parameters
+        self.mass_r_array = np.zeros((self.MASS_LEN, self.SIM_DIM), dtype=self.DTYPE)
+        self.mass_a_array = np.zeros((self.MASS_LEN, self.SIM_DIM), dtype=self.DTYPE)
+        self.mass_m_array = np.zeros((self.MASS_LEN,), dtype=self.DTYPE)
+        # Copy const data into Numpy infrastructure
+        for pm_index, pm in enumerate(self._mass_list):
+            self.mass_m_array[pm_index] = pm._m
+        # Allocate memory: Temporary variables
+        self.relative_r = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype=self.DTYPE)
+        self.distance_sq = np.zeros((self.MASS_LEN - 1,), dtype=self.DTYPE)
+        self.distance_sqv = np.zeros(
+            (self.MASS_LEN - 1, self.SIM_DIM), dtype=self.DTYPE
+        )
+        self.distance_inv = np.zeros((self.MASS_LEN - 1,), dtype=self.DTYPE)
+        self.a_factor = np.zeros((self.MASS_LEN - 1,), dtype=self.DTYPE)
+        self.a1 = np.zeros((self.MASS_LEN - 1,), dtype=self.DTYPE)
+        self.a1r = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype=self.DTYPE)
+        self.a1v = np.zeros((self.SIM_DIM,), dtype=self.DTYPE)
+        self.a2 = np.zeros((self.MASS_LEN - 1,), dtype=self.DTYPE)
+        self.a2r = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype=self.DTYPE)
 
-	def start_kernel(self):
-		self.DTYPE = self._dtype
-		# Get const values
-		self.MASS_LEN = len(self)
-		self.SIM_DIM = len(self._mass_list[0]._r)
-		# Allocate memory: Object parameters
-		self.mass_r_array = np.zeros((self.MASS_LEN, self.SIM_DIM), dtype = self.DTYPE)
-		self.mass_a_array = np.zeros((self.MASS_LEN, self.SIM_DIM), dtype = self.DTYPE)
-		self.mass_m_array = np.zeros((self.MASS_LEN,), dtype = self.DTYPE)
-		# Copy const data into Numpy infrastructure
-		for pm_index, pm in enumerate(self._mass_list):
-			self.mass_m_array[pm_index] = pm._m
-		# Allocate memory: Temporary variables
-		self.relative_r = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype = self.DTYPE)
-		self.distance_sq = np.zeros((self.MASS_LEN - 1,), dtype = self.DTYPE)
-		self.distance_sqv = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype = self.DTYPE)
-		self.distance_inv = np.zeros((self.MASS_LEN - 1,), dtype = self.DTYPE)
-		self.a_factor = np.zeros((self.MASS_LEN - 1,), dtype = self.DTYPE)
-		self.a1 = np.zeros((self.MASS_LEN - 1,), dtype = self.DTYPE)
-		self.a1r = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype = self.DTYPE)
-		self.a1v = np.zeros((self.SIM_DIM,), dtype = self.DTYPE)
-		self.a2 = np.zeros((self.MASS_LEN - 1,), dtype = self.DTYPE)
-		self.a2r = np.zeros((self.MASS_LEN - 1, self.SIM_DIM), dtype = self.DTYPE)
+    def update_pair(self, i, k):
+        np.subtract(
+            self.mass_r_array[i, :],
+            self.mass_r_array[i + 1 :, :],
+            out=self.relative_r[:k],
+        )
+        np.multiply(self.relative_r[:k], self.relative_r[:k], out=self.distance_sqv[:k])
+        np.add.reduce(self.distance_sqv[:k], axis=1, out=self.distance_sq[:k])
+        np.sqrt(self.distance_sq[:k], out=self.distance_inv[:k])
+        np.divide(1.0, self.distance_inv[:k], out=self.distance_inv[:k])
+        np.multiply(
+            self.relative_r[:k],
+            self.distance_inv[:k].reshape(k, 1),
+            out=self.relative_r[:k],
+        )
+        np.divide(self._G, self.distance_sq[:k], out=self.a_factor[:k])
+        np.multiply(self.a_factor[:k], self.mass_m_array[i + 1 :], out=self.a1[:k])
+        np.multiply(self.a_factor[:k], self.mass_m_array[i], out=self.a2[:k])
+        np.multiply(self.relative_r[:k], self.a1[:k].reshape(k, 1), out=self.a1r[:k])
+        np.add.reduce(self.a1r[:k], axis=0, out=self.a1v)
+        np.subtract(self.mass_a_array[i, :], self.a1v, out=self.mass_a_array[i, :])
+        np.multiply(self.relative_r[:k], self.a2[:k].reshape(k, 1), out=self.a2r[:k])
+        np.add(
+            self.mass_a_array[i + 1 :, :],
+            self.a2r[:k],
+            out=self.mass_a_array[i + 1 :, :],
+        )
 
-	def update_pair(self, i, k):
-		np.subtract(self.mass_r_array[i,:], self.mass_r_array[i+1:,:], out = self.relative_r[:k])
-		np.multiply(self.relative_r[:k], self.relative_r[:k], out = self.distance_sqv[:k])
-		np.add.reduce(self.distance_sqv[:k], axis = 1, out = self.distance_sq[:k])
-		np.sqrt(self.distance_sq[:k], out = self.distance_inv[:k])
-		np.divide(1.0, self.distance_inv[:k], out = self.distance_inv[:k])
-		np.multiply(self.relative_r[:k], self.distance_inv[:k].reshape(k, 1), out = self.relative_r[:k])
-		np.divide(self._G, self.distance_sq[:k], out = self.a_factor[:k])
-		np.multiply(self.a_factor[:k], self.mass_m_array[i+1:], out = self.a1[:k])
-		np.multiply(self.a_factor[:k], self.mass_m_array[i], out = self.a2[:k])
-		np.multiply(self.relative_r[:k], self.a1[:k].reshape(k, 1), out = self.a1r[:k])
-		np.add.reduce(self.a1r[:k], axis = 0, out = self.a1v)
-		np.subtract(self.mass_a_array[i,:], self.a1v, out = self.mass_a_array[i,:])
-		np.multiply(self.relative_r[:k], self.a2[:k].reshape(k, 1), out = self.a2r[:k])
-		np.add(self.mass_a_array[i+1:,:], self.a2r[:k], out = self.mass_a_array[i+1:,:])
-
-	def step_stage1(self):
-		# Zero out variables
-		self.mass_a_array[:, :] = 0.0
-		# Copy dynamic data to Numpy infrastructure
-		for pm_index, pm in enumerate(self._mass_list):
-			self.mass_r_array[pm_index,:] = pm._r[:]
-		# Run "pair" calculation: One object against vector of objects per iteration
-		for row in range(0, self.MASS_LEN - 1):
-			self.update_pair(row, self.MASS_LEN - 1 - row) # max for temp arrays
-		# Push dynamic data back to Python infrastructure
-		for pm_index, pm in enumerate(self._mass_list):
-			pm._a[:] = self.mass_a_array[pm_index,:]
+    def step_stage1(self):
+        # Zero out variables
+        self.mass_a_array[:, :] = 0.0
+        # Copy dynamic data to Numpy infrastructure
+        for pm_index, pm in enumerate(self._mass_list):
+            self.mass_r_array[pm_index, :] = pm._r[:]
+        # Run "pair" calculation: One object against vector of objects per iteration
+        for row in range(0, self.MASS_LEN - 1):
+            self.update_pair(row, self.MASS_LEN - 1 - row)  # max for temp arrays
+        # Push dynamic data back to Python infrastructure
+        for pm_index, pm in enumerate(self._mass_list):
+            pm._a[:] = self.mass_a_array[pm_index, :]

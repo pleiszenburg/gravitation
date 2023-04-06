@@ -28,17 +28,17 @@ specific language governing rights and limitations under the License.
 # KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__longname__ = 'javascript-backend 1'
-__version__ = '0.0.1'
-__description__ = 'javascript-backend (ES6) based on py_mini_racer and V8'
-__requirements__ = ['py_mini_racer']
+__longname__ = "javascript-backend 1"
+__version__ = "0.0.1"
+__description__ = "javascript-backend (ES6) based on py_mini_racer and V8"
+__requirements__ = ["py_mini_racer"]
 __externalrequirements__ = []
-__interpreters__ = ['python3']
+__interpreters__ = ["python3"]
 __parallel__ = False
-__license__ = 'GPLv2'
+__license__ = "GPLv2"
 __authors__ = [
-	'Sebastian M. Ernst <ernst@pleiszenburg.de>',
-	]
+    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
+]
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT/EXPORT

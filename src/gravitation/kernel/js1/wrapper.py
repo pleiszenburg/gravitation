@@ -40,26 +40,28 @@ from .._base_ import universe_base
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 class universe(universe_base):
+    def start_kernel(self):
+        self.ctx = py_mini_racer.MiniRacer()
+        with open(os.path.join(os.path.dirname(__file__), "core.js"), "r") as f:
+            self.ctx.eval(
+                f.read()
+                .replace("__SIM_DIM__", "%d" % len(self._mass_list[0]._r))
+                .replace("__G__", "%e" % self._G)
+            )
+        self.ctx.eval(
+            "var w = new universe({mass_list:s}, {G:e});".format(
+                mass_list=json.dumps([pm._m for pm in self._mass_list]),
+                G=self._G,
+            )
+        )
 
-	def start_kernel(self):
-		self.ctx = py_mini_racer.MiniRacer()
-		with open(os.path.join(os.path.dirname(__file__), 'core.js'), 'r') as f:
-			self.ctx.eval(
-				f.read().replace(
-					'__SIM_DIM__', '%d' % len(self._mass_list[0]._r)
-					).replace(
-					'__G__', '%e' % self._G
-					)
-				)
-		self.ctx.eval('var w = new universe({mass_list:s}, {G:e});'.format(
-			mass_list = json.dumps([pm._m for pm in self._mass_list]),
-			G = self._G,
-			))
-
-	def step_stage1(self):
-		a = self.ctx.eval('w.step_stage1({r:s})'.format(
-			r = json.dumps([pm._r for pm in self._mass_list])
-			))
-		for pm, a_item in zip(self._mass_list, a):
-			pm._a[:] = a_item[:]
+    def step_stage1(self):
+        a = self.ctx.eval(
+            "w.step_stage1({r:s})".format(
+                r=json.dumps([pm._r for pm in self._mass_list])
+            )
+        )
+        for pm, a_item in zip(self._mass_list, a):
+            pm._a[:] = a_item[:]

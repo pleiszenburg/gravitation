@@ -28,17 +28,17 @@ specific language governing rights and limitations under the License.
 # KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__longname__ = 'c-backend 4(a)'
-__version__ = '0.0.1'
-__description__ = 'C-core, SSE2-intrinsics, openMP-parallel, ctypes-interface'
+__longname__ = "c-backend 4(a)"
+__version__ = "0.0.1"
+__description__ = "C-core, SSE2-intrinsics, openMP-parallel, ctypes-interface"
 __requirements__ = []
-__externalrequirements__ = ['gcc']
-__interpreters__ = ['python3']
+__externalrequirements__ = ["gcc"]
+__interpreters__ = ["python3"]
 __parallel__ = True
-__license__ = 'GPLv2'
+__license__ = "GPLv2"
 __authors__ = [
-	'Sebastian M. Ernst <ernst@pleiszenburg.de>',
-	]
+    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
+]
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
@@ -53,58 +53,78 @@ from ._base_ import universe_base
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 class universe(universe_base):
+    def start_kernel(self):
+        self.DTYPE = self._dtype
+        self.CDTYPE = getattr(
+            ctypes,
+            "c_{name:s}".format(
+                name={"float32": "float", "float64": "double"}[self.DTYPE]
+            ),
+        )
+        os.environ["OMP_NUM_THREADS"] = str(self._threads)
+        array_fields = ["X", "Y", "Z", "AX", "AY", "AZ", "M"]
+        array_fields_mp = ["AXmp", "AYmp", "AZmp"]
+        array_type = self.CDTYPE * len(self)
+        array_type_mp = self.CDTYPE * (len(self) * self._threads)
 
-	def start_kernel(self):
-		self.DTYPE = self._dtype
-		self.CDTYPE = getattr(ctypes, 'c_{name:s}'.format(
-			name = {'float32': 'float', 'float64': 'double'}[self.DTYPE]
-			))
-		os.environ['OMP_NUM_THREADS'] = str(self._threads)
-		array_fields = ['X', 'Y', 'Z', 'AX', 'AY', 'AZ', 'M']
-		array_fields_mp = ['AXmp', 'AYmp', 'AZmp']
-		array_type = self.CDTYPE * len(self)
-		array_type_mp = self.CDTYPE * (len(self) * self._threads)
-		class univ(ctypes.Structure):
-			_fields_ = [
-				(field, ctypes.POINTER(array_type))
-				for field in array_fields
-				] + [
-				('G', self.CDTYPE),
-				('N', ctypes.c_long),
-				] + [
-				(field, ctypes.POINTER(array_type_mp))
-				for field in array_fields_mp
-				] + [
-				('j_min', ctypes.POINTER(ctypes.c_long)),
-				('j_max', ctypes.POINTER(ctypes.c_long)),
-				('seg_len', ctypes.c_long),
-				('OPENMP_threadsmax', ctypes.c_long),
-				]
-		lib = ctypes.cdll.LoadLibrary(
-			os.path.join(os.path.dirname(__file__), '_lib4_', 'lib.so')
-			)
-		self._step_stage1_segmentation_ = lib.step_stage1_segmentation
-		self._step_stage1_segmentation_.argtypes = (ctypes.POINTER(univ),)
-		self._step_stage1_ = lib.step_stage1
-		self._step_stage1_.argtypes = (ctypes.POINTER(univ),)
-		self.univ = univ()
-		for field in array_fields:
-			getattr(self.univ, field).contents = array_type()
-		for field in array_fields_mp:
-			getattr(self.univ, field).contents = array_type_mp()
-		for i in range(len(self) * self._threads): # HACK
-			self.univ.AXmp.contents[i], self.univ.AYmp.contents[i], self.univ.AZmp.contents[i] = 0.0, 0.0, 0.0
-		for i, pm in enumerate(self._mass_list):
-			self.univ.M.contents[i] = pm._m
-		self.univ.G = self._G
-		self.univ.N = len(self)
-		self._step_stage1_segmentation_(self.univ)
+        class univ(ctypes.Structure):
+            _fields_ = (
+                [(field, ctypes.POINTER(array_type)) for field in array_fields]
+                + [
+                    ("G", self.CDTYPE),
+                    ("N", ctypes.c_long),
+                ]
+                + [(field, ctypes.POINTER(array_type_mp)) for field in array_fields_mp]
+                + [
+                    ("j_min", ctypes.POINTER(ctypes.c_long)),
+                    ("j_max", ctypes.POINTER(ctypes.c_long)),
+                    ("seg_len", ctypes.c_long),
+                    ("OPENMP_threadsmax", ctypes.c_long),
+                ]
+            )
 
-	def step_stage1(self):
-		for i, pm in enumerate(self._mass_list):
-			self.univ.X.contents[i], self.univ.Y.contents[i], self.univ.Z.contents[i] = pm._r
-			self.univ.AX.contents[i], self.univ.AY.contents[i], self.univ.AZ.contents[i] = 0.0, 0.0, 0.0
-		self._step_stage1_(self.univ)
-		for i, pm in enumerate(self._mass_list):
-			pm._a[:] = [self.univ.AX.contents[i], self.univ.AY.contents[i], self.univ.AZ.contents[i]]
+        lib = ctypes.cdll.LoadLibrary(
+            os.path.join(os.path.dirname(__file__), "_lib4_", "lib.so")
+        )
+        self._step_stage1_segmentation_ = lib.step_stage1_segmentation
+        self._step_stage1_segmentation_.argtypes = (ctypes.POINTER(univ),)
+        self._step_stage1_ = lib.step_stage1
+        self._step_stage1_.argtypes = (ctypes.POINTER(univ),)
+        self.univ = univ()
+        for field in array_fields:
+            getattr(self.univ, field).contents = array_type()
+        for field in array_fields_mp:
+            getattr(self.univ, field).contents = array_type_mp()
+        for i in range(len(self) * self._threads):  # HACK
+            (
+                self.univ.AXmp.contents[i],
+                self.univ.AYmp.contents[i],
+                self.univ.AZmp.contents[i],
+            ) = (0.0, 0.0, 0.0)
+        for i, pm in enumerate(self._mass_list):
+            self.univ.M.contents[i] = pm._m
+        self.univ.G = self._G
+        self.univ.N = len(self)
+        self._step_stage1_segmentation_(self.univ)
+
+    def step_stage1(self):
+        for i, pm in enumerate(self._mass_list):
+            (
+                self.univ.X.contents[i],
+                self.univ.Y.contents[i],
+                self.univ.Z.contents[i],
+            ) = pm._r
+            (
+                self.univ.AX.contents[i],
+                self.univ.AY.contents[i],
+                self.univ.AZ.contents[i],
+            ) = (0.0, 0.0, 0.0)
+        self._step_stage1_(self.univ)
+        for i, pm in enumerate(self._mass_list):
+            pm._a[:] = [
+                self.univ.AX.contents[i],
+                self.univ.AY.contents[i],
+                self.univ.AZ.contents[i],
+            ]
