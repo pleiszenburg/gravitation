@@ -51,62 +51,69 @@ STDERR = 2
 
 
 @typechecked
-def _read_stream_worker(in_stream: BufferedReader, out_queue: Queue):
-    """reads lines from stream and puts them into queue"""
-    for line in iter(in_stream.readline, b""):
-        out_queue.put(line)
-    in_stream.close()
+class _Reader:
+    "read from stream in thread"
 
+    def __init__(self, id: int, stream: BufferedReader, processing: Callable):
+        self._id = id
+        self._stream = stream
+        self._processing = processing
+        self._output = []
+        self._queue = Queue()
+        self._thread = Thread(target = self._worker)
+        self._thread.daemon = True
+        self._thread.start()
 
-@typechecked
-def _start_reader(in_stream: BufferedReader) -> Tuple[Thread, Queue]:
-    """starts reader thread and returns a thread object and a queue object"""
-    out_queue = Queue()
-    reader_thread = Thread(
-        target=_read_stream_worker, args=(in_stream, out_queue)
-    )
-    reader_thread.daemon = True
-    reader_thread.start()
-    return reader_thread, out_queue
+    def _worker(self):
+        "thread worker function"
+        for line in iter(self._stream.readline, b""):
+            self._queue.put(line)
+        self._stream.close()
 
+    @property
+    def output(self) -> str:
+        "stream output as single string"
+        return "".join(self._output)
 
-@typechecked
-def _read_stream(stream_id: int, in_queue: Queue, out_list: List[str], processing: Callable):
-    """reads lines from queue and processes them"""
-    try:
-        line = in_queue.get_nowait()
-    except Empty:
-        pass
-    else:
-        line = line.decode("utf-8")
-        out_list.append(line)
-        processing(stream_id, line.strip("\n"))
-        in_queue.task_done()
+    def read(self):
+        "read from stream in main thread"
+        while not self._queue.empty():
+            try:
+                line = self._queue.get_nowait()
+            except Empty:
+                pass
+            else:
+                line = line.decode("utf-8")
+                self._output.append(line)
+                self._processing(self._id, line.strip("\n"))
+                self._queue.task_done()
+
+    def close(self):
+        "join queue and thread"
+        self._queue.join()
+        self._thread.join()
 
 
 @typechecked
 def run_command(cmd: List[str], unbuffer: bool = False, processing: Optional[Callable] = None) -> Tuple[bool, str, str]:
-    """subprocess.Popen wrapper, reads stdout and stderr in realtime"""
-    if unbuffer:
-        os.environ["PYTHONUNBUFFERED"] = "1"
-    else:
-        os.environ["PYTHONUNBUFFERED"] = "0"
+    "subprocess.Popen wrapper, reads stdout and stderr in realtime"
+
+    os.environ["PYTHONUNBUFFERED"] = "1" if unbuffer else 0
     if processing is None:
         processing = print
+
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout_thread, stdout_queue = _start_reader(proc.stdout)
-    stderr_thread, stderr_queue = _start_reader(proc.stderr)
-    stdout_list, stderr_list = [], []
+    stdout = _Reader(id = STDOUT, stream = proc.stdout, processing = processing)
+    stderr = _Reader(id = STDERR, stream = proc.stderr, processing = processing)
+
     while True:
         sleep(0.2)
-        while not stdout_queue.empty():
-            _read_stream(STDOUT, stdout_queue, stdout_list, processing)
-        while not stderr_queue.empty():
-            _read_stream(STDERR, stderr_queue, stderr_list, processing)
+        stdout.read()
+        stderr.read()
         if proc.poll() is not None:
             break
-    stdout_queue.join()
-    stderr_queue.join()
-    stdout_thread.join()
-    stderr_thread.join()
-    return (not bool(proc.returncode), "".join(stdout_list), "".join(stderr_list))
+
+    stdout.close()
+    stderr.close()
+
+    return (not bool(proc.returncode), stdout.output, stderr.output)
