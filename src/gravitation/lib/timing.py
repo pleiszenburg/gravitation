@@ -31,15 +31,22 @@ specific language governing rights and limitations under the License.
 try:
     from time import time_ns
 except ImportError:  # CPython <= 3.6
-    from time import time as _time_
+    from time import time as _time
+    time_ns = lambda: int(_time() * 1e9)
+    del _time
 
-    time_ns = lambda: int(_time_() * 1e9)
+from typeguard import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+class TimerError(Exception):
+    pass
+
+
+@typechecked
 class BestRunTimer:
     """looks for best runtime, infinite number of recorded runtimes / states:
     based on walltime (clocking GPU time is tricky), as little overhead as possible"""
@@ -49,36 +56,36 @@ class BestRunTimer:
         self._running = False
         self._lower = None
 
-    def avg(self):
+    def avg(self) -> int:
         """returns average over all recorded runtimes / states [ns as int]"""
         if len(self._state) == 0:
-            raise SyntaxError("Nothing has been recorded.")
+            raise TimerError("Nothing has been recorded.")
         return sum(self._state) // len(self._state)
 
-    def min(self):
+    def min(self) -> int:
         """returns minimum of all recorded runtimes / states [ns as int]"""
         if len(self._state) == 0:
-            raise SyntaxError("Nothing has been recorded.")
+            raise TimerError("Nothing has been recorded.")
         return min(self._state)
 
-    def sum(self):
+    def sum(self) -> int:
         """returns sum of all recorded runtimes / states [ns as int]"""
         if len(self._state) == 0:
-            raise SyntaxError("Nothing has been recorded.")
+            raise TimerError("Nothing has been recorded.")
         return sum(self._state)
 
     def start(self):
         """starts a timing run"""
         if self._running:
-            raise SyntaxError("Timer is running!")
+            raise TimerError("Timer is running!")
         self._running = True
         self._lower = time_ns()
 
-    def stop(self):
+    def stop(self) -> int:
         """stops a timing run and returns runtime [ns as int]"""
         upper = time_ns()
         if not self._running:
-            raise SyntaxError("Timer is NOT running!")
+            raise TimerError("Timer is NOT running!")
         runtime = upper - self._lower
         self._lower = None
         self._running = False
@@ -86,15 +93,17 @@ class BestRunTimer:
         return runtime
 
 
+@typechecked
 class AverageTimer(BestRunTimer):
     """looks for best runtime, limited number of recorded runtimes / states:
     based on walltime (clocking GPU time is tricky), as little overhead as possible"""
 
-    def __init__(self, maxlen):
+    def __init__(self, maxlen: int):
+        assert maxlen >= 1
         super().__init__()
         self._maxlen = maxlen
 
-    def stop(self):
+    def stop(self) -> int:
         """stops a timing run and returns runtime [ns as int],
         ensures maximum number of runtimes"""
         runtime = super().stop()
@@ -103,11 +112,12 @@ class AverageTimer(BestRunTimer):
         return runtime
 
 
+@typechecked
 class ElapsedTimer:
     """keeps track of time elapsed since initialization"""
 
     def __init__(self):
         self._state = time_ns()
 
-    def __call__(self):
+    def __call__(self) -> int:
         return time_ns() - self._state
