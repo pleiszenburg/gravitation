@@ -196,6 +196,7 @@ setup(
         "py_mini_racer",
         "termplotlib",
         # 'torch',
+        "typeguard",
     ],
     extras_require={
         "dev": [
