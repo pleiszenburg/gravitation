@@ -120,17 +120,17 @@ class realtimeview:
             ]
             pygame.draw.circle(self._canvas, self._mass_color, p, 5)
         self._draw_text(
-            "%.02f F/s" % (1.0e9 / self._timer_fps.avg()),
+            "%.02f F/s" % (1.0e9 / self._timer_fps.avg),
             (self._pixel_size[0], 0),
             right=True,
         )
         self._draw_text(
-            "%.02f S/s" % (1.0e9 / self._timer_sps.avg()),
+            "%.02f S/s" % (1.0e9 / self._timer_sps.avg),
             (self._pixel_size[0], self._font_size),
             right=True,
         )
         self._draw_text(
-            "%.01e s/S" % (self._timer_sps.avg() / 1.0e9),
+            "%.01e s/S" % (self._timer_sps.avg / 1.0e9),
             (self._pixel_size[0], 2 * self._font_size),
             right=True,
         )

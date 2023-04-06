@@ -162,7 +162,7 @@ def worker(
         if counter[0] in save_after_iteration:
             _store()
         _msg(log="STEP", runtime=rt_, gctime=gt_, counter=counter[0])
-        _msg(log="BEST_TIME", value=rt.min())
+        _msg(log="BEST_TIME", value=rt.min)
 
     def _store():
         _msg(log="PROCEDURE", msg="Saving data after step %d ..." % counter[0])

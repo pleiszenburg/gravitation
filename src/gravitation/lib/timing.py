@@ -56,18 +56,21 @@ class BestRunTimer:
         self._running = False
         self._lower = None
 
+    @property
     def avg(self) -> int:
         """returns average over all recorded runtimes / states [ns as int]"""
         if len(self._state) == 0:
             raise TimerError("Nothing has been recorded.")
         return sum(self._state) // len(self._state)
 
+    @property
     def min(self) -> int:
         """returns minimum of all recorded runtimes / states [ns as int]"""
         if len(self._state) == 0:
             raise TimerError("Nothing has been recorded.")
         return min(self._state)
 
+    @property
     def sum(self) -> int:
         """returns sum of all recorded runtimes / states [ns as int]"""
         if len(self._state) == 0:
