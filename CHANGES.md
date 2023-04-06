@@ -2,7 +2,9 @@
 
 ## 0.2.0 (2023-XX-XX)
 
-- (TBD)
+- FIX: Dependency changed from `asciiplotlib` to `termplotlib`
+- FIX: Make CLI run with recent versions of `click`
+- DOCS: Even longer wish list
 
 ## 0.0.2 (2019-02-13)
 
