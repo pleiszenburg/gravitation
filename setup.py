@@ -44,7 +44,7 @@ import sysconfig
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # Package version
-__version__ = "0.0.2"
+__version__ = "0.2.0"
 
 # List all versions of Python which are supported
 confirmed_python_versions = [
@@ -52,7 +52,7 @@ confirmed_python_versions = [
 ]
 
 # Fetch readme file
-with open(os.path.join(os.path.dirname(__file__), "README.md")) as f:
+with open(os.path.join(os.path.dirname(__file__), "README.md"), encoding = 'utf-8') as f:
     long_description = f.read()
 
 # Define source directory (path)
@@ -178,7 +178,6 @@ setup(
         "Cython",
     ],
     install_requires=[
-        "asciiplotlib",
         "click",
         # 'cupy',
         "Cython",
@@ -195,13 +194,14 @@ setup(
         "pygame",
         "py-cpuinfo",
         "py_mini_racer",
+        "termplotlib",
         # 'torch',
     ],
     extras_require={
         "dev": [
             "black",
             # 'pytest',
-            "python-language-server",
+            "python-lsp-server",
             "setuptools",
             # 'Sphinx',
             # 'sphinx_rtd_theme',
