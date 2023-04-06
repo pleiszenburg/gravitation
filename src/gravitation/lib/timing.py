@@ -40,7 +40,7 @@ except ImportError:  # CPython <= 3.6
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-class best_run_timer:
+class BestRunTimer:
     """looks for best runtime, infinite number of recorded runtimes / states:
     based on walltime (clocking GPU time is tricky), as little overhead as possible"""
 
@@ -86,7 +86,7 @@ class best_run_timer:
         return runtime
 
 
-class average_timer(best_run_timer):
+class AverageTimer(BestRunTimer):
     """looks for best runtime, limited number of recorded runtimes / states:
     based on walltime (clocking GPU time is tricky), as little overhead as possible"""
 
@@ -103,7 +103,7 @@ class average_timer(best_run_timer):
         return runtime
 
 
-class elapsed_timer:
+class ElapsedTimer:
     """keeps track of time elapsed since initialization"""
 
     def __init__(self):

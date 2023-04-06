@@ -54,7 +54,7 @@ except:
 
 from ..lib.load import inventory
 from ..lib.simulation import create_simulation, store_simulation
-from ..lib.timing import best_run_timer, elapsed_timer
+from ..lib.timing import BestRunTimer, ElapsedTimer
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
@@ -245,9 +245,9 @@ def worker(
     _msg(log="PROCEDURE", msg="Simulation created.")
     _msg(log="SIZE", value=len(s))
 
-    rt = best_run_timer()  # runtime
-    gt = best_run_timer()  # gc time
-    et = elapsed_timer()  # elapsed time
+    rt = BestRunTimer()  # runtime
+    gt = BestRunTimer()  # gc time
+    et = ElapsedTimer()  # elapsed time
 
     gc.disable()
 

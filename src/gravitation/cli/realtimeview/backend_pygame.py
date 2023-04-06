@@ -35,7 +35,7 @@ import pygame
 
 from ...lib.load import inventory
 from ...lib.simulation import create_simulation
-from ...lib.timing import average_timer
+from ...lib.timing import AverageTimer
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -61,8 +61,8 @@ class realtimeview:
             scenario_param=scenario_param,
             threads=threads,
         )
-        self._timer_sps = average_timer(self._universe._screen["average_over_steps"])
-        self._timer_fps = average_timer(self._universe._screen["average_over_steps"])
+        self._timer_sps = AverageTimer(self._universe._screen["average_over_steps"])
+        self._timer_fps = AverageTimer(self._universe._screen["average_over_steps"])
         self._init_canvas(
             spf=self._universe._screen["steps_per_frame"]
             if steps_per_frame is None
