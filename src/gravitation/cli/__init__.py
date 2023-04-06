@@ -28,4 +28,4 @@ specific language governing rights and limitations under the License.
 # IMPORT/EXPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from ._main_ import cli
+from ._main import cli
