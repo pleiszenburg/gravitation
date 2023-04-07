@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/_base_.py: Base class, all kernels derive from it
+    src/gravitation/kernel/_base.py: Base class, all kernels derive from it
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -28,6 +28,15 @@ specific language governing rights and limitations under the License.
 # CONST
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+from abc import ABC, abstractmethod
+from typing import Any, Generator, List
+
+from typeguard import typechecked
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# CONST
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 STATE_PREINIT = 0
 STATE_STARTED = 1
 STATE_STOPPED = 2
@@ -37,10 +46,21 @@ STATE_STOPPED = 2
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-class _point_mass:
-    """holds point mass description"""
+class UniverseError(Exception):
+    pass
 
-    def __init__(self, name, r, v, m):
+
+@typechecked
+class PointMass:
+    """
+    holds point mass description
+    """
+
+    def __init__(self, name: str, r: List[float], v: List[float], m: float):
+
+        assert len(r) == 3
+        assert len(v) == 3
+
         self._name, self._r, self._v, self._a, self._m = (
             name,
             r,
@@ -49,39 +69,70 @@ class _point_mass:
             m,
         )
 
-    def __str__(self):
+    def __repr__(self):
+
         return (
-            "{name} | " "{x:.4e}, {y:.4e}, {z:.4e} | " "{vx:.4e}, {vy:.4e}, {vz:.4e}"
+            "<PointMass name={name} | " "{x:.4e}, {y:.4e}, {z:.4e} | " "{vx:.4e}, {vy:.4e}, {vz:.4e}>"
         ).format(
             name=self._name,
             **{key: val for key, val in zip(["x", "y", "z"], self._r)},
             **{key: val for key, val in zip(["vx", "vy", "vz"], self._v)},
         )
 
-    def move(self, T):
-        """moves with precomputed acceleration (base stage 2 implementation)"""
+    @property
+    def name(self) -> str:
+        "name"
+
+        return self._name
+
+    @property
+    def r(self) -> List[float]:
+        "location"
+
+        return self._r
+
+    @property
+    def v(self) -> List[float]:
+        "velocity"
+
+        return self._v
+
+    @property
+    def m(self) -> float:
+        "mass"
+
+        return self._m
+
+    def move(self, T: float):
+        """
+        moves with precomputed acceleration (base stage 2 implementation)
+        """
+
         self._v[:] = [a * T + v for v, a in zip(self._v, self._a)]
         self._r[:] = [v * T + r for r, v in zip(self._r, self._v)]
         self._a[:] = [0.0 for _ in range(len(self._a))]
 
 
-class universe_base:
-    """kernel base class, provides infrastructure, does nothing on its own
+@typechecked
+class UniverseBase(ABC):
+    """
+    kernel base class, provides infrastructure, does nothing on its own
     DERIVE FROM HERE!
-    IMPLEMENT / OVERLOAD AT LEAST `step_stage1`!"""
+    IMPLEMENT AT LEAST `step_stage1`!
+    """
 
     def __init__(
         self,
-        t=0.0,  # simulation start time (s)
-        T=1.0e3,  # simulation interval (s)
-        G=6.6740831e-11,  # gravitational constant
-        scale_m=1.0,  # scaling factor for mass (for kg)
-        scale_r=1.0,  # scaling factor for distances (for m)
-        dtype="float32",  # datatype for numerical computations
-        threads=1,  # maximum number of threads
-        **kwargs,  # catch anything else
+        t: float = 0.0,  # simulation start time (s)
+        T: float = 1.0e3,  # simulation interval (s)
+        G: float = 6.6740831e-11,  # gravitational constant
+        scale_m: float = 1.0,  # scaling factor for mass (for kg)
+        scale_r: float = 1.0,  # scaling factor for distances (for m)
+        dtype: str = "float32",  # datatype for numerical computations
+        threads: int = 1,  # maximum number of threads
+        **kwargs: Any,  # catch anything else
     ):
-        """MUST NOT BE OVERLOADED!"""
+
         self._scale_m = scale_m
         self._scale_r = scale_r
         self._t = t
@@ -96,86 +147,108 @@ class universe_base:
         self._threads = threads
         self._meta = kwargs
 
-    def __iter__(self):
-        """MUST NOT BE OVERLOADED!"""
+    def __iter__(self) -> Generator:
+
         return (p for p in self._mass_list)
 
-    def __len__(self):
-        """MUST NOT BE OVERLOADED!"""
+    def __len__(self) -> int:
+
         return len(self._mass_list)
 
-    def __str__(self):
-        """CAN BE OVERLOADED!"""
+    def __repr__(self) -> str:
+
         return "\n".join([str(pm) for pm in self._mass_list])
 
-    def add_object(self, **kwargs):
-        """adds point mass object to kernel object
-        MUST NOT BE OVERLOADED!"""
+    def add_object(self, **kwargs: Any):
+        """
+        adds point mass object to kernel object
+        """
+
         if self._state == STATE_STARTED:
-            raise SyntaxError("simulation was started")
+            raise UniverseError("simulation was started")
         if self._state == STATE_STOPPED:
-            raise SyntaxError("simulation was stopped")
+            raise UniverseError("simulation was stopped")
+
         if not kwargs.pop("scale_off", False):
             kwargs["r"][:] = [dim * self._scale_r for dim in kwargs["r"]]
             kwargs["v"][:] = [dim * self._scale_r for dim in kwargs["v"]]
             kwargs["m"] *= self._scale_m
-        self._mass_list.append(_point_mass(**kwargs))
+
+        self._mass_list.append(PointMass(**kwargs))
 
     def start(self):
-        """starts simulation
+        """
+        starts simulation
         MUST BE CALLED ONCE: AFTER ADDING OBJECTS AND BEFORE STEPPING!
-        MUST NOT BE OVERLOADED!"""
+        """
+
         if self._state == STATE_STARTED:
-            raise SyntaxError("simulation is running")
+            raise UniverseError("simulation is running")
         if self._state == STATE_STOPPED:
-            raise SyntaxError("simulation was stopped")
+            raise UniverseError("simulation was stopped")
+
         self._state = STATE_STARTED
         self.start_kernel()
 
     def start_kernel(self):
-        """starts kernel, called by "start"
-        OVERLOAD IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!"""
-        pass
+        """
+        starts kernel, called by `start`
+        REIMPLEMENT IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!
+        """
 
     def step(self):
-        """runs all three stages of one simulation (time-) step
-        MUST NOT BE OVERLOADED!"""
+        """
+        runs all three stages of one simulation (time-) step
+        """
+
         if self._state == STATE_PREINIT:
-            raise SyntaxError("simulation was not started")
+            raise UniverseError("simulation was not started")
         if self._state == STATE_STOPPED:
-            raise SyntaxError("simulation was stopped")
+            raise UniverseError("simulation was stopped")
+
         self.step_stage1()
         self.step_stage2()
         self.step_stage3()
 
+    @abstractmethod
     def step_stage1(self):
-        """runs stage 1 (computes accelerations) of one simulation (time-) step
-        MUST BE OVERLOADED!"""
+        """
+        runs stage 1 (computes accelerations) of one simulation (time-) step
+        MUST BE REIMPLEMENTED!
+        """
+
         raise NotImplementedError()
 
     def step_stage2(self):
-        """runs stage 2 (computes velocities and locations) of one simulation (time-) step
-        CAN BE OVERLOADED!"""
+        """
+        runs stage 2 (computes velocities and locations) of one simulation (time-) step
+        """
+
         for pm in self._mass_list:
             pm.move(self._T)
 
     def step_stage3(self):
-        """runs stage 3 (increments simulation time) of one simulation (time-) step
-        MUST NOT BE OVERLOADED!"""
+        """
+        runs stage 3 (increments simulation time) of one simulation (time-) step
+        """
+
         self._t += self._T
 
     def stop(self):
-        """stops simulation
+        """
+        stops simulation
         CAN BE CALLED ONCE: AFTER STEPPING!
-        MUST NOT BE OVERLOADED!"""
+        """
         if self._state == STATE_PREINIT:
-            raise SyntaxError("simulation was not started")
+            raise UniverseError("simulation was not started")
         if self._state == STATE_STOPPED:
-            raise SyntaxError("simulation was stopped before")
+            raise UniverseError("simulation was stopped before")
+
         self._state = STATE_STOPPED
         self.stop_kernel()
 
     def stop_kernel(self):
-        """stops kernel, called by "stop"
-        OVERLOAD IF KERNEL-SPECIFIC DESTRUCTION IS REQUIRED!"""
-        pass
+        """
+        stops kernel, called by `stop`
+        REIMPLEMENT IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!
+        """
