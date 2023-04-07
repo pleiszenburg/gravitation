@@ -158,7 +158,7 @@ def _range(start: int, end: int) -> Generator:
 @click.option(
     "--data_out_file",
     "-o",
-    default="data.h5",
+    default="data_out.h5",
     type=str,
     show_default=True,
     help="name of output data file",
