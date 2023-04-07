@@ -70,18 +70,11 @@ def _get_backends() -> list[str]:
     help="name of kernel module",
 )
 @click.option(
-    "--scenario",
-    default="galaxy",
-    type=str,
+    "--len",
+    default=2000,
+    type=int,
     show_default=True,
-    help="what to simulate",
-)
-@click.option(
-    "--scenario_param",
-    default="{}",
-    type=str,
-    show_default=True,
-    help="JSON string with scenario parameters",
+    help="number of point masses",
 )
 @click.option(
     "--steps_per_frame",
@@ -114,8 +107,7 @@ def _get_backends() -> list[str]:
 )
 def realtimeview(
     kernel: str,
-    scenario: str,
-    scenario_param: str,
+    len: int,
     steps_per_frame: int,
     max_iterations: int,
     backend: str,
@@ -123,14 +115,12 @@ def realtimeview(
 ):
     """view a simulation progressing in realtime"""
 
-    scenario_param = json.loads(scenario_param)
     threads = int(threads)
 
     args = (
         kernel,
         threads,
-        scenario,
-        scenario_param,
+        len,
     )
     kwargs = dict(
         steps_per_frame = None if steps_per_frame == -1 else steps_per_frame,

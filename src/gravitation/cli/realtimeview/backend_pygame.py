@@ -35,7 +35,6 @@ import pygame
 from typeguard import typechecked
 
 from ...lib.load import inventory
-from ...lib.simulation import create_simulation
 from ...lib.timing import AverageTimer
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -53,28 +52,26 @@ class Realtimeview:
         self,
         kernel: str,
         threads: int,
-        scenario: str,
-        scenario_param: dict,
+        len: int,
         steps_per_frame: Optional[int] = None,
         max_iterations: Optional[int] = None,
     ):
         self._max_iterations = max_iterations
         self._iteration_counter = 0
         inventory[kernel].load_module()
-        self._universe = create_simulation(
-            scenario=scenario,
-            universe_class=inventory[kernel].get_class(),
-            scenario_param=scenario_param,
-            threads=threads,
+        self._universe = inventory[kernel].get_class().from_galaxy(
+            stars_len = len,
+            threads = threads,
         )
-        self._timer_sps = AverageTimer(self._universe._screen["average_over_steps"])
-        self._timer_fps = AverageTimer(self._universe._screen["average_over_steps"])
+        self._universe.start()
+        self._timer_sps = AverageTimer(self._universe.meta["average_over_steps"])
+        self._timer_fps = AverageTimer(self._universe.meta["average_over_steps"])
         self._init_canvas(
-            spf=self._universe._screen["steps_per_frame"]
+            spf=self._universe.meta["steps_per_frame"]
             if steps_per_frame is None
             else steps_per_frame,
-            unit=self._universe._screen["unit"],
-            unit_size=self._universe._screen["unit_size"],
+            unit=self._universe.meta["unit"],
+            unit_size=self._universe.meta["unit_size"],
         )
 
     def _init_canvas(self, spf: int, unit: float, unit_size: List[float], base: int = 1024):
@@ -86,7 +83,7 @@ class Realtimeview:
         self._mass_color = (255, 255, 0)
         self._reference_linewidth = 2
         self._reference_color = (255, 0, 0)
-        self._unit = unit * self._universe._scale_r
+        self._unit = unit * self._universe.scale_r
         self._scale_factor = base / self._unit / unit_size[0]
         self._pixel_size = [base, int(base * unit_size[1] / unit_size[0])]
         self._pixel_null = [dim // 2 for dim in self._pixel_size]
@@ -122,7 +119,7 @@ class Realtimeview:
         for mass in self._universe:
             p = [
                 int(sign * pos * self._scale_factor + off)
-                for sign, pos, off in zip([1, -1], mass._r, self._pixel_null)
+                for sign, pos, off in zip([1, -1], mass.r, self._pixel_null)
             ]
             pygame.draw.circle(self._canvas, self._mass_color, p, 5)
         self._draw_text(
