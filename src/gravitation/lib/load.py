@@ -82,7 +82,7 @@ class _kernel:
         """returns kernel class"""
         if self._module is None:
             raise SyntaxError("kernel module has not been loaded")
-        return self._module.universe
+        return self._module.Universe
 
     def load_meta(self):
         """loads meta data from kernel without importing it"""
