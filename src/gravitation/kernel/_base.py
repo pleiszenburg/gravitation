@@ -29,8 +29,10 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 from abc import ABC, abstractmethod
-from typing import Any, Generator, List
+from typing import Any, Generator, List, Optional
 
+import h5py
+import numpy as np
 from typeguard import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -40,6 +42,8 @@ from typeguard import typechecked
 STATE_PREINIT = 0
 STATE_STARTED = 1
 STATE_STOPPED = 2
+
+DIMS = 3
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -58,8 +62,8 @@ class PointMass:
 
     def __init__(self, name: str, r: List[float], v: List[float], m: float):
 
-        assert len(r) == 3
-        assert len(v) == 3
+        assert len(r) == DIMS
+        assert len(v) == DIMS
 
         self._name, self._r, self._v, self._a, self._m = (
             name,
@@ -121,6 +125,16 @@ class UniverseBase(ABC):
     IMPLEMENT AT LEAST `step_stage1`!
     """
 
+    _ATTRS = (
+        'scale_m',
+        'scale_r',
+        't',
+        'T',
+        'G',
+        'dtype',
+        'threads',
+    )
+
     def __init__(
         self,
         t: float = 0.0,  # simulation start time (s)
@@ -130,18 +144,23 @@ class UniverseBase(ABC):
         scale_r: float = 1.0,  # scaling factor for distances (for m)
         dtype: str = "float32",  # datatype for numerical computations
         threads: int = 1,  # maximum number of threads
+        scaled: bool = False,
         **kwargs: Any,  # catch anything else
     ):
+
+        assert T > 0
+        assert G > 0
+        assert scale_m > 0
+        assert scale_r > 0
+        assert dtype in ('float32', 'float64')
+        assert threads > 0
 
         self._scale_m = scale_m
         self._scale_r = scale_r
         self._t = t
         self._T = T
-        if not kwargs.pop("scale_off", False):
-            self._G = G * (self._scale_r**3) / self._scale_m
-        else:
-            self._G = G
-        self._mass_list = []
+        self._G = G * (self._scale_r**3) / self._scale_m if not scaled else G
+        self._masses = []
         self._state = STATE_PREINIT
         self._dtype = dtype
         self._threads = threads
@@ -149,19 +168,26 @@ class UniverseBase(ABC):
 
     def __iter__(self) -> Generator:
 
-        return (p for p in self._mass_list)
+        return (p for p in self._masses)
 
     def __len__(self) -> int:
 
-        return len(self._mass_list)
+        return len(self._masses)
 
     def __repr__(self) -> str:
 
-        return "\n".join([str(pm) for pm in self._mass_list])
+        return f"<Universe len={len(self):d} dtype={self._dtype:s}>"
 
-    def add_object(self, **kwargs: Any):
+    def add_mass(self, mass: PointMass):
         """
-        adds point mass object to kernel object
+        add point mass object to universe
+        """
+
+        self._masses.append(mass)
+
+    def create_mass(self, name: str, r: List[float], v: List[float], m: float, scaled: bool = False):
+        """
+        create point mass object and add to universe
         """
 
         if self._state == STATE_STARTED:
@@ -169,12 +195,12 @@ class UniverseBase(ABC):
         if self._state == STATE_STOPPED:
             raise UniverseError("simulation was stopped")
 
-        if not kwargs.pop("scale_off", False):
-            kwargs["r"][:] = [dim * self._scale_r for dim in kwargs["r"]]
-            kwargs["v"][:] = [dim * self._scale_r for dim in kwargs["v"]]
-            kwargs["m"] *= self._scale_m
+        if not scaled:
+            r[:] = [dim * self._scale_r for dim in r]
+            v[:] = [dim * self._scale_r for dim in v]
+            m *= self._scale_m
 
-        self._mass_list.append(PointMass(**kwargs))
+        self._masses.append(PointMass(name = name, r = r, v = v, m = m))
 
     def start(self):
         """
@@ -196,7 +222,7 @@ class UniverseBase(ABC):
         REIMPLEMENT IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!
         """
 
-    def step(self):
+    def step(self, stage1: bool = True):
         """
         runs all three stages of one simulation (time-) step
         """
@@ -206,9 +232,17 @@ class UniverseBase(ABC):
         if self._state == STATE_STOPPED:
             raise UniverseError("simulation was stopped")
 
-        self.step_stage1()
+        if stage1:
+            self.step_stage1()
+        self.sync()
         self.step_stage2()
+        self.sync()
         self.step_stage3()
+
+    def sync(self):
+        """
+        REIMPLEMENT IF KERNEL-SPECIFIC DATA STRUCTURES NEED TO BE SYNCED BACK TO MASS OBJECTS
+        """
 
     @abstractmethod
     def step_stage1(self):
@@ -224,7 +258,7 @@ class UniverseBase(ABC):
         runs stage 2 (computes velocities and locations) of one simulation (time-) step
         """
 
-        for pm in self._mass_list:
+        for pm in self._masses:
             pm.move(self._T)
 
     def step_stage3(self):
@@ -252,3 +286,76 @@ class UniverseBase(ABC):
         stops kernel, called by `stop`
         REIMPLEMENT IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!
         """
+
+    def to_hdf5(self, fn: str, gn: str):
+        """
+        stores simulation state into HDF5 file
+        """
+
+        f = h5py.File(fn, "a")
+
+        if gn in f.keys():
+            f.close()
+            raise ValueError('hdf5 group under this name already exists', fn, gn)
+        dg = f.create_group(gn)
+
+        dtype = {"float32": "<f4", "float64": "<f8"}[self._dtype]
+
+        r = dg.create_dataset("r", (len(self), DIMS), dtype=dtype)
+        v = dg.create_dataset("v", (len(self), DIMS), dtype=dtype)
+        m = dg.create_dataset("m", (len(self),), dtype=dtype)
+
+        names = []
+        for idx, mass in enumerate(self):
+            names.append(mass.name.encode("utf-8"))
+            r[idx, :] = mass.r[:]
+            v[idx, :] = mass.v[:]
+            m[idx] = mass.m
+
+        buffer = np.chararray((len(self),), unicode=False, itemsize=max(len(name) for name in names))
+        for idx, name in enumerate(names):
+            buffer[idx] = name
+        name = dg.create_dataset("name", (len(self),), dtype=buffer.dtype)
+        name[:] = buffer[:]
+
+        for attr in self._ATTRS:
+            dg.attrs[attr] = getattr(self, f'_{attr:s}')
+        for k, v in self._meta.items():
+            dg.attrs[k] = v
+
+        f.close()
+
+    @classmethod
+    def from_hdf5(cls, fn: str, gn: str, threads: Optional[int] = None):
+        """loads simulation from HDF5 file into object generated from kernel class"""
+
+        f = h5py.File(fn, "r")
+
+        if gn not in f.keys():
+            f.close()
+            raise ValueError('hdf5 group under this name not present', fn, gn)
+        dg = f[gn]
+
+        kwargs = {
+            attr: dg.attrs[attr]
+            for attr in dg.attrs.keys()
+        }
+        if isinstance(threads, int):
+            kwargs["threads"] = threads
+
+        universe = cls(scaled=True, **kwargs)
+
+        r, v, m, n = dg["r"], dg["v"], dg["m"], dg["name"]
+
+        for index in range(r.shape[0]):
+            universe.create_mass(
+                scaled=True,
+                name=bytes(n[index]).decode("utf-8"),
+                r=[float(i) for i in r[index, :]],
+                v=[float(i) for i in v[index, :]],
+                m=float(m[index]),
+            )
+
+        f.close()
+
+        return universe
