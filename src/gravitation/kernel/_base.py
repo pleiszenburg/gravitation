@@ -29,6 +29,7 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 from abc import ABC, abstractmethod
+from json import dumps
 from math import atan2, cos, pi, sin, sqrt
 from random import random
 from typing import Any, Generator, List, Optional, Tuple
@@ -382,6 +383,12 @@ class UniverseBase(ABC):
         f.close()
 
         return universe
+
+    @staticmethod
+    def name_group(**kwargs) -> str:
+        "generate name for HDF5 group"
+
+        return dumps(kwargs, sort_keys = True)
 
     @classmethod
     def from_galaxy(

@@ -275,7 +275,11 @@ class _Worker:
         try:
             self._universe.to_hdf5(
                 fn=self._data_out_file,
-                gn=f"kernel={self._kernel:s};len={len(self._universe):d};step={self._counter:d}",
+                gn=self._universe.name_group(
+                    kernel = self._kernel,
+                    len = len(self._universe),
+                    step = self._counter,
+                )
             )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
