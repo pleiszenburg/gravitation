@@ -63,22 +63,22 @@ import click
 def plot(logfile, html_out):
     """plot benchmark json data file"""
 
-    data_list = []
-    for f in logfile:
-        data_list.extend(json.loads(f.read()))
+    logs = []
+    for fh in logfile:
+        logs.extend(json.loads(fh.read()))
 
-    data_dict = {
+    runtimes = {
         item: dict()
-        for item in {item["meta"]["simulation"]["kernel"] for item in data_list}
+        for item in {item["meta"]["simulation"]["kernel"] for item in logs}
     }
 
-    for item in data_list:
-        data_dict[item["meta"]["simulation"]["kernel"]][
+    for item in logs:
+        runtimes[item["meta"]["simulation"]["kernel"]][
             item["meta"]["simulation"]["size"]
         ] = min(item["runtime"])
 
     traces = []
-    for kernel_name, kernel_results in sorted(data_dict.items(), key=lambda x: x[0]):
+    for kernel_name, kernel_results in sorted(runtimes.items(), key=lambda x: x[0]):
         x, y = [], []
         for size, runtime in sorted(kernel_results.items(), key=lambda x: x[0]):
             x.append(size)
