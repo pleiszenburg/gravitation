@@ -275,7 +275,7 @@ class _Worker:
         try:
             self._universe.to_hdf5(
                 fn=self._data_out_file,
-                gn=self._universe.name_group(
+                gn=self._universe.export_name_group(
                     kernel = self._kernel,
                     len = len(self._universe),
                     step = self._counter,
