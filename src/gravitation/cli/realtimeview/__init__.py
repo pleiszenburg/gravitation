@@ -123,8 +123,8 @@ def realtimeview(
         len,
     )
     kwargs = dict(
-        steps_per_frame = None if steps_per_frame == -1 else steps_per_frame,
-        max_iterations = None if max_iterations == -1 else max_iterations,
+        steps_per_frame=None if steps_per_frame == -1 else steps_per_frame,
+        max_iterations=None if max_iterations == -1 else max_iterations,
     )
 
     Realtimeview = importlib.import_module(

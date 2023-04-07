@@ -68,8 +68,7 @@ def plot(logfile, html_out):
         logs.extend(json.loads(fh.read()))
 
     runtimes = {
-        item: dict()
-        for item in {item["meta"]["simulation"]["kernel"] for item in logs}
+        item: dict() for item in {item["meta"]["simulation"]["kernel"] for item in logs}
     }
 
     for item in logs:

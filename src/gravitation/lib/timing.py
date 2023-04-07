@@ -32,6 +32,7 @@ try:
     from time import time_ns
 except ImportError:  # CPython <= 3.6
     from time import time as _time
+
     time_ns = lambda: int(_time() * 1e9)
     del _time
 

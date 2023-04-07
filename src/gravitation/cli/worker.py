@@ -156,7 +156,6 @@ class _Worker:
         min_total_runtime: int,
         threads: int,
     ):
-
         self._msg(log="START")
 
         self._kernel = kernel
@@ -176,15 +175,18 @@ class _Worker:
         self._universe = self._init_universe()
 
     def _init_universe(self) -> UniverseBase:
-
         self._msg(log="PROCEDURE", msg="Creating simulation ...")
 
         inventory[self._kernel].load_module()
 
         try:
-            universe = inventory[self._kernel].get_class().from_galaxy(
-                stars_len = self._len,
-                threads = self._threads,
+            universe = (
+                inventory[self._kernel]
+                .get_class()
+                .from_galaxy(
+                    stars_len=self._len,
+                    threads=self._threads,
+                )
             )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
@@ -198,12 +200,10 @@ class _Worker:
 
     @staticmethod
     def _msg(**d):
-
-        sys.stdout.write(f'{json.dumps(d):s}\n')
+        sys.stdout.write(f"{json.dumps(d):s}\n")
         sys.stdout.flush()
 
     def _msg_inputs(self):
-
         self._msg(
             log="INPUT",
             simulation=dict(
@@ -242,7 +242,6 @@ class _Worker:
         )
 
     def _step(self):
-
         try:
             gc.collect()
             self._rt.start()
@@ -257,7 +256,7 @@ class _Worker:
             sys.exit()
 
         try:
-            self._universe.step(stage1 = False)
+            self._universe.step(stage1=False)
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
             self._msg(log="EXIT", msg="BAD")
@@ -271,13 +270,12 @@ class _Worker:
         self._msg(log="BEST_TIME", value=self._rt.min)
 
     def _store(self):
-
         self._msg(log="PROCEDURE", msg=f"Saving data after step {self._counter:d} ...")
 
         try:
             self._universe.to_hdf5(
-                fn = self._data_out_file,
-                gn = f"kernel={self._kernel:s};len={len(self._universe):d};step={self._counter:d}",
+                fn=self._data_out_file,
+                gn=f"kernel={self._kernel:s};len={len(self._universe):d};step={self._counter:d}",
             )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())

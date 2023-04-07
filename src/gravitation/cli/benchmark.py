@@ -70,8 +70,7 @@ def _process_data(
         id: int,  # 1 STDOUT, 2 STDERR
         line: str,
     ):
-
-        fh.write(f'{line:s}\n')
+        fh.write(f"{line:s}\n")
         if display == "log":
             print(line)
         outputs.append(line)
@@ -123,7 +122,7 @@ def _range(start: int, end: int) -> Generator:
     assert start <= end
     state = start
     while True:
-        value = 2 ** state
+        value = 2**state
         yield value
         if state == end:
             break
@@ -249,7 +248,7 @@ def benchmark(
     }
     outputs = []
 
-    fh = open(logfile, "w", encoding = 'utf-8')
+    fh = open(logfile, "w", encoding="utf-8")
 
     def shutdown():
         fh.close()
@@ -257,7 +256,6 @@ def benchmark(
     atexit.register(shutdown)
 
     for name in names:
-
         inventory[name].load_meta()
         parallel = inventory[name]["parallel"]
         parallel = parallel if isinstance(parallel, bool) else False

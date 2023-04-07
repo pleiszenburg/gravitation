@@ -68,8 +68,8 @@ def _parse_itemstr_to_itemdict(raw: str) -> dict:
     errors = [line for line in lines if line["log"] == "JSON_ERROR"]
     if len(errors) != 0:
         for idx, error in enumerate(errors):
-            print(f'=== ERROR {idx+1:d} ===')
-            print(error['str'])
+            print(f"=== ERROR {idx+1:d} ===")
+            print(error["str"])
         raise BenchmarkLogError("benchmark log has non-JSON components, likely errors")
 
     errors = [line for line in lines if line["log"] == "ERROR"]
@@ -86,25 +86,17 @@ def _parse_itemstr_to_itemdict(raw: str) -> dict:
     input_[0].pop("log")
     item["meta"] = input_[0]
 
-    size = copy.deepcopy(
-        [line for line in lines if line["log"] == "SIZE"]
-    )
+    size = copy.deepcopy([line for line in lines if line["log"] == "SIZE"])
     if len(size) > 1:
         raise BenchmarkLogError("more than one SIZE log per benchmark worker run")
     if len(size) < 1:
         raise BenchmarkLogError("SIZE log missing in benchmark worker run")
     item["meta"]["simulation"]["size"] = size[0]["value"]
 
-    item["runtime"] = [
-        line["runtime"] for line in lines if line["log"] == "STEP"
-    ]
-    item["gctime"] = [
-        line["gctime"] for line in lines if line["log"] == "STEP"
-    ]
+    item["runtime"] = [line["runtime"] for line in lines if line["log"] == "STEP"]
+    item["gctime"] = [line["gctime"] for line in lines if line["log"] == "STEP"]
 
-    counter = [
-        line["counter"] for line in lines if line["log"] == "STEP"
-    ]
+    counter = [line["counter"] for line in lines if line["log"] == "STEP"]
     if len(counter) == 0:
         raise BenchmarkLogError("benchmark did not run any steps")
     if counter != list(range(counter[0], len(counter) + counter[0])):

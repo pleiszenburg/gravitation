@@ -60,7 +60,7 @@ class _Reader:
         self._processing = processing
         self._output = []
         self._queue = Queue()
-        self._thread = Thread(target = self._worker)
+        self._thread = Thread(target=self._worker)
         self._thread.daemon = True
         self._thread.start()
 
@@ -95,7 +95,9 @@ class _Reader:
 
 
 @typechecked
-def run_command(cmd: List[str], unbuffer: bool = False, processing: Optional[Callable] = None) -> Tuple[bool, str, str]:
+def run_command(
+    cmd: List[str], unbuffer: bool = False, processing: Optional[Callable] = None
+) -> Tuple[bool, str, str]:
     "subprocess.Popen wrapper, reads stdout and stderr in realtime"
 
     os.environ["PYTHONUNBUFFERED"] = "1" if unbuffer else 0
@@ -103,8 +105,8 @@ def run_command(cmd: List[str], unbuffer: bool = False, processing: Optional[Cal
         processing = print
 
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout = _Reader(id = STDOUT, stream = proc.stdout, processing = processing)
-    stderr = _Reader(id = STDERR, stream = proc.stderr, processing = processing)
+    stdout = _Reader(id=STDOUT, stream=proc.stdout, processing=processing)
+    stderr = _Reader(id=STDERR, stream=proc.stderr, processing=processing)
 
     while True:
         sleep(0.2)

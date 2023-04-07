@@ -59,9 +59,13 @@ class Realtimeview:
         self._max_iterations = max_iterations
         self._iteration_counter = 0
         inventory[kernel].load_module()
-        self._universe = inventory[kernel].get_class().from_galaxy(
-            stars_len = len,
-            threads = threads,
+        self._universe = (
+            inventory[kernel]
+            .get_class()
+            .from_galaxy(
+                stars_len=len,
+                threads=threads,
+            )
         )
         self._universe.start()
         self._timer_sps = AverageTimer(self._universe.meta["average_over_steps"])
@@ -74,7 +78,9 @@ class Realtimeview:
             unit_size=self._universe.meta["unit_size"],
         )
 
-    def _init_canvas(self, spf: int, unit: float, unit_size: List[float], base: int = 1024):
+    def _init_canvas(
+        self, spf: int, unit: float, unit_size: List[float], base: int = 1024
+    ):
         pygame.init()
         self._font_size = 20
         self._font = pygame.font.SysFont("Consolas", self._font_size)

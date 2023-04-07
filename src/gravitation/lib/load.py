@@ -90,8 +90,8 @@ class _kernel:
             os.path.join(self._path, self._name + ".py")
             if self._isfile
             else os.path.join(self._path, self._name, "__init__.py"),
-            mode = "r",
-            encoding = 'utf-8',
+            mode="r",
+            encoding="utf-8",
         ) as f:
             self._src = f.read()
         self._meta = {

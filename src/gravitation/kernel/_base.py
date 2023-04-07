@@ -63,7 +63,6 @@ class PointMass:
     """
 
     def __init__(self, name: str, r: List[float], v: List[float], m: float):
-
         assert len(r) == DIMS
         assert len(v) == DIMS
 
@@ -76,9 +75,10 @@ class PointMass:
         )
 
     def __repr__(self):
-
         return (
-            "<PointMass name={name} | " "{x:.4e}, {y:.4e}, {z:.4e} | " "{vx:.4e}, {vy:.4e}, {vz:.4e}>"
+            "<PointMass name={name} | "
+            "{x:.4e}, {y:.4e}, {z:.4e} | "
+            "{vx:.4e}, {vy:.4e}, {vz:.4e}>"
         ).format(
             name=self._name,
             **{key: val for key, val in zip(["x", "y", "z"], self._r)},
@@ -134,13 +134,13 @@ class UniverseBase(ABC):
     """
 
     _ATTRS = (
-        'scale_m',
-        'scale_r',
-        't',
-        'T',
-        'G',
-        'dtype',
-        'threads',
+        "scale_m",
+        "scale_r",
+        "t",
+        "T",
+        "G",
+        "dtype",
+        "threads",
     )
 
     def __init__(
@@ -155,12 +155,11 @@ class UniverseBase(ABC):
         scaled: bool = False,
         **kwargs: Any,  # catch anything else
     ):
-
         assert T > 0
         assert G > 0
         assert scale_m > 0
         assert scale_r > 0
-        assert dtype in ('float32', 'float64')
+        assert dtype in ("float32", "float64")
         assert threads > 0
 
         self._scale_m = scale_m
@@ -175,15 +174,12 @@ class UniverseBase(ABC):
         self._meta = kwargs
 
     def __iter__(self) -> Generator:
-
         return (p for p in self._masses)
 
     def __len__(self) -> int:
-
         return len(self._masses)
 
     def __repr__(self) -> str:
-
         return f"<Universe len={len(self):d} dtype={self._dtype:s}>"
 
     @property
@@ -211,7 +207,9 @@ class UniverseBase(ABC):
 
         self._masses.append(mass)
 
-    def create_mass(self, name: str, r: List[float], v: List[float], m: float, scaled: bool = False):
+    def create_mass(
+        self, name: str, r: List[float], v: List[float], m: float, scaled: bool = False
+    ):
         """
         create point mass object and add to universe
         """
@@ -226,7 +224,7 @@ class UniverseBase(ABC):
             v[:] = [dim * self._scale_r for dim in v]
             m *= self._scale_m
 
-        self._masses.append(PointMass(name = name, r = r, v = v, m = m))
+        self._masses.append(PointMass(name=name, r=r, v=v, m=m))
 
     def start(self):
         """
@@ -322,7 +320,7 @@ class UniverseBase(ABC):
 
         if gn in f.keys():
             f.close()
-            raise ValueError('hdf5 group under this name already exists', fn, gn)
+            raise ValueError("hdf5 group under this name already exists", fn, gn)
         dg = f.create_group(gn)
 
         dtype = {"float32": "<f4", "float64": "<f8"}[self._dtype]
@@ -338,14 +336,16 @@ class UniverseBase(ABC):
             v[idx, :] = mass.v[:]
             m[idx] = mass.m
 
-        buffer = np.chararray((len(self),), unicode=False, itemsize=max(len(name) for name in names))
+        buffer = np.chararray(
+            (len(self),), unicode=False, itemsize=max(len(name) for name in names)
+        )
         for idx, name in enumerate(names):
             buffer[idx] = name
         name = dg.create_dataset("name", (len(self),), dtype=buffer.dtype)
         name[:] = buffer[:]
 
         for attr in self._ATTRS:
-            dg.attrs[attr] = getattr(self, f'_{attr:s}')
+            dg.attrs[attr] = getattr(self, f"_{attr:s}")
         for k, v in self._meta.items():
             dg.attrs[k] = v
 
@@ -359,13 +359,10 @@ class UniverseBase(ABC):
 
         if gn not in f.keys():
             f.close()
-            raise ValueError('hdf5 group under this name not present', fn, gn)
+            raise ValueError("hdf5 group under this name not present", fn, gn)
         dg = f[gn]
 
-        kwargs = {
-            attr: dg.attrs[attr]
-            for attr in dg.attrs.keys()
-        }
+        kwargs = {attr: dg.attrs[attr] for attr in dg.attrs.keys()}
         if isinstance(threads, int):
             kwargs["threads"] = threads
 
@@ -408,15 +405,15 @@ class UniverseBase(ABC):
         """
 
         universe = cls(
-            T = T,
-            scale_m = scale_m,
-            scale_r = scale_r,
-            dtype = dtype,
-            threads = threads,
-            unit = 1e20,  # m (meta)
-            unit_size = [16.0, 10.0],  # units (meta)
-            average_over_steps = 20,  # (meta)
-            steps_per_frame = 1,  # (meta)
+            T=T,
+            scale_m=scale_m,
+            scale_r=scale_r,
+            dtype=dtype,
+            threads=threads,
+            unit=1e20,  # m (meta)
+            unit_size=[16.0, 10.0],  # units (meta)
+            average_over_steps=20,  # (meta)
+            steps_per_frame=1,  # (meta)
         )
 
         universe.create_mass(
@@ -427,12 +424,10 @@ class UniverseBase(ABC):
         )
 
         for n in range(stars_len - 1):
-
             alpha = random() * 2.0 * pi
 
             # generate disk of stars
             if n < (stars_len * 4 // 5):
-
                 # random orbit radius
                 r_abs = (random() * 4.5 + 0.1) * radius
 
@@ -450,7 +445,6 @@ class UniverseBase(ABC):
 
             # generate central cloud of stars
             else:
-
                 # random orbit radius
                 r_abs = (random() * 0.75 + 0.1) * radius
 
