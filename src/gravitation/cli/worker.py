@@ -94,7 +94,7 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     type=int,
     show_default=True,
     multiple=True,
-    help="save model universe into file iteration x, -1 if nothing should be saved",
+    help="save model universe into file iteration n",
 )
 @click.option(
     "--min_iterations",
