@@ -29,7 +29,7 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import gc
-import itertools
+from itertools import chain
 import json
 import platform
 import sys
@@ -40,17 +40,13 @@ import psutil
 
 try:
     import cpuinfo
-
-    CPUINFO = True
-except:
-    CPUINFO = False
+except ModuleNotFoundError:
+    cpuinfo = None
 
 try:
     import GPUtil
-
-    GPUINFO = True
-except:
-    GPUINFO = False
+except ModuleNotFoundError:
+    GPUtil = None
 
 from ..lib.load import inventory
 from ..lib.simulation import create_simulation, store_simulation
@@ -154,7 +150,7 @@ def worker(
             gt.start()
             gc.collect()
             gt_ = gt.stop()
-        except:
+        except Exception:
             _msg(log="ERROR", msg=traceback.format_exc())
             _msg(log="EXIT", msg="BAD")
             sys.exit()
@@ -165,23 +161,18 @@ def worker(
         _msg(log="BEST_TIME", value=rt.min)
 
     def _store():
-        _msg(log="PROCEDURE", msg="Saving data after step %d ..." % counter[0])
+        _msg(log="PROCEDURE", msg=f"Saving data after step {counter[0]:d} ...")
         try:
             store_simulation(
                 s,
                 data_out_file,
-                "kernel={kernel:s};len={n:d};step={step:d}".format(
-                    kernel=kernel,
-                    scenario=scenario,
-                    n=len(s),
-                    step=counter[0],
-                ),
+                f"kernel={kernel:s};scenario={scenario:s};len={len(s):d};step={counter[0]:d}",
             )
-        except:
+        except Exception:
             _msg(log="ERROR", msg=traceback.format_exc())
             _msg(log="EXIT", msg="BAD")
             sys.exit()
-        _msg(log="PROCEDURE", msg="Data saved after step %d." % counter[0])
+        _msg(log="PROCEDURE", msg=f"Data saved after step {counter[0]:d}.")
 
     _msg(log="START")
 
@@ -213,7 +204,7 @@ def worker(
             processor=platform.processor(),
             cores=psutil.cpu_count(logical=False),
             threads=MAX_TREADS,
-            _cpu=cpuinfo.get_cpu_info() if CPUINFO else {},
+            _cpu=cpuinfo.get_cpu_info() if cpuinfo is not None else {},
             _gpu=[
                 {
                     n: getattr(gpu, n)
@@ -222,7 +213,7 @@ def worker(
                 }
                 for gpu in GPUtil.getGPUs()
             ]
-            if GPUINFO
+            if GPUtil is not None
             else {},
         ),
     )
@@ -238,7 +229,7 @@ def worker(
             scenario_param=scenario_param,
             threads=threads,
         )
-    except:
+    except Exception:
         _msg(log="ERROR", msg=traceback.format_exc())
         _msg(log="EXIT", msg="BAD")
         sys.exit()
@@ -295,22 +286,22 @@ def worker_command(
         "from gravitation.cli import cli; cli()",
         "worker",
         "--kernel",
-        "%s" % kernel,
+        kernel,
         "--scenario",
-        "%s" % scenario,
+        scenario,
         "--scenario_param",
-        "%s" % json.dumps(scenario_param),
+        json.dumps(scenario_param),
         "--data_out_file",
         data_out_file,
         *list(
-            itertools.chain(
-                *[("--save_after_iteration", "%d" % it) for it in save_after_iteration]
+            chain(
+                *[("--save_after_iteration", f"{it:d}") for it in save_after_iteration]
             )
         ),
         "--min_iterations",
-        "%d" % min_iterations,
+        f"{min_iterations:d}",
         "--min_total_runtime",
-        "%d" % min_total_runtime,
+        f"{min_total_runtime:d}",
         "--threads",
-        "%d" % threads,
+        f"{threads:d}",
     ]
