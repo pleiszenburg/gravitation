@@ -29,7 +29,9 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 from abc import ABC, abstractmethod
-from typing import Any, Generator, List, Optional
+from math import atan2, cos, pi, sin, sqrt
+from random import random
+from typing import Any, Generator, List, Optional, Tuple
 
 import h5py
 import numpy as np
@@ -177,6 +179,12 @@ class UniverseBase(ABC):
     def __repr__(self) -> str:
 
         return f"<Universe len={len(self):d} dtype={self._dtype:s}>"
+
+    @property
+    def G(self) -> float:
+        "(scaled) gravitational constant"
+
+        return self._G
 
     def add_mass(self, mass: PointMass):
         """
@@ -357,5 +365,121 @@ class UniverseBase(ABC):
             )
 
         f.close()
+
+        return universe
+
+    @classmethod
+    def from_galaxy(
+        cls,
+        T: float = 2.0e12,
+        scale_m: float = 1.0e-30,
+        scale_r: float = 1.0e-10,
+        dtype: str = "float32",
+        threads: int = 1,
+        stars_len: int = 2000,
+        r: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        v: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        g_alpha: float = 0.0,
+        g_beta: float = 0.0,
+        m_hole: float = 4e40,
+        m_star: float = 2e30,
+        radius: float = 1e20,
+    ):
+        """
+        creates a galaxy-like bunch of objects and adds them to universe
+        """
+
+        universe = cls(
+            T = T,
+            scale_m = scale_m,
+            scale_r = scale_r,
+            dtype = dtype,
+            threads = threads,
+            unit = 1e20,  # m (meta)
+            unit_size = [16.0, 10.0],  # units (meta)
+            average_over_steps = 20,  # (meta)
+            steps_per_frame = 1,  # (meta)
+        )
+
+        universe.create_mass(
+            name="back hole",
+            r=[d for d in r],
+            v=[d for d in v],
+            m=m_hole,
+        )
+
+        for n in range(stars_len - 1):
+
+            alpha = random() * 2.0 * pi
+
+            # generate disk of stars
+            if n < (stars_len * 4 // 5):
+
+                # random orbit radius
+                r_abs = (random() * 4.5 + 0.1) * radius
+
+                # compute star position
+                r_s = [
+                    r_abs * cos(alpha),
+                    r_abs * sin(alpha),
+                    (0.5 * random() - 0.25)
+                    * radius
+                    * ((4.5 + 0.1) * radius - r_abs)
+                    / ((4.5 + 0.1) * radius),
+                ]
+
+                name = "disk star"
+
+            # generate central cloud of stars
+            else:
+
+                # random orbit radius
+                r_abs = (random() * 0.75 + 0.1) * radius
+
+                # random inclination
+                beta = pi * (random() - 0.5)
+
+                # compute star position
+                r_s = [
+                    r_abs * cos(alpha) * cos(beta),
+                    r_abs * sin(alpha) * cos(beta),
+                    r_abs * sin(beta),
+                ]
+
+                name = "cloud star"
+
+            # absolute orbital velocity around central body
+            v_abs = sqrt(universe.G * m_hole / sqrt(sum([d**2 for d in r_s])))
+            # phase angle
+            v_alpha = alpha - (pi / 2)
+
+            # preliminary velocity vector
+            v_s = [v_abs * cos(v_alpha), v_abs * sin(v_alpha), 0.0]
+
+            # rotate around x axis (beta)
+            v_s[1:] = [v_s[1] * cos(g_beta), v_s[1] * sin(g_beta)]
+
+            # rotate around z axis (alpha)
+            v_alpha = atan2(v_s[1], v_s[0]) + g_alpha
+            v_factor = sqrt(v_s[0] ** 2 + v_s[1] ** 2)
+            v_s[0:2] = [v_factor * cos(v_alpha), v_factor * sin(v_alpha)]
+
+            # actual velocity vector
+            v_s = [d + e for d, e in zip(v_s, v)]
+
+            # rotate around x axis (beta)
+            r_beta = atan2(r_s[2], r_s[1]) + g_beta
+            r_factor = sqrt(r_s[2] ** 2 + r_s[1] ** 2)
+            r_s[1:] = [r_factor * cos(r_beta), r_factor * sin(r_beta)]
+
+            # rotate around z axis (alpha)
+            r_alpha = atan2(r_s[1], r_s[0]) + g_alpha
+            r_factor = sqrt(r_s[0] ** 2 + r_s[1] ** 2)
+            r_s[0:2] = [r_factor * cos(r_alpha), r_factor * sin(r_alpha)]
+
+            # shift by center of galaxy
+            r_s = [d + e for d, e in zip(r_s, r)]
+
+            universe.create_mass(name=name, r=r_s, v=v_s, m=m_star)
 
         return universe
