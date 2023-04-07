@@ -11,7 +11,7 @@ octave-workspace
 *.json
 build/
 dist/
-**/kernel/cy*/**/*.c
+**/kernel/**/cy*/**/*.c
 *.egg-info
 pip-wheel-metadata/
 .old/
