@@ -258,15 +258,26 @@ class UniverseBase(ABC):
             raise UniverseError("simulation was stopped")
 
         if stage1:
+            self.push_stage1()
             self.step_stage1()
-        self.sync()
+        self.pull_stage1()
         self.step_stage2()
-        self.sync()
+        self.pull_stage2()
         self.step_stage3()
 
-    def sync(self):
+    def push_stage1(self):
         """
-        REIMPLEMENT IF KERNEL-SPECIFIC DATA STRUCTURES NEED TO BE SYNCED BACK TO MASS OBJECTS
+        REIMPLEMENT IF KERNEL-SPECIFIC DATA STRUCTURES NEED TO BE SYNCED FROM MASS OBJECTS BEFORE STAGE 1
+        """
+
+    def pull_stage1(self):
+        """
+        REIMPLEMENT IF KERNEL-SPECIFIC DATA STRUCTURES NEED TO BE SYNCED BACK TO MASS OBJECTS AFTER STAGE 1
+        """
+
+    def pull_stage2(self):
+        """
+        REIMPLEMENT IF KERNEL-SPECIFIC DATA STRUCTURES NEED TO BE SYNCED BACK TO MASS OBJECTS AFTER STAGE 2
         """
 
     @abstractmethod

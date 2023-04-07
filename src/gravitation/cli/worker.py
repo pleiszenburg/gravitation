@@ -243,6 +243,7 @@ class _Worker:
 
     def _step(self):
         try:
+            self._universe.push_stage1()
             gc.collect()
             self._rt.start()
             self._universe.step_stage1()
@@ -290,6 +291,8 @@ class _Worker:
 
     def run(self):
         "run worker"
+
+        self._universe.start()
 
         gc.disable()
 
