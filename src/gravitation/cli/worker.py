@@ -83,7 +83,7 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 @click.option(
     "--data_out_file",
     "-o",
-    default="data.h5",
+    default="data_out.h5",
     type=str,
     show_default=True,
     help="name of output data file",
@@ -95,6 +95,30 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     show_default=True,
     multiple=True,
     help="save model universe into file iteration n",
+)
+@click.option(
+    "--data_in_file",
+    "-j",
+    default="data_in.h5",
+    type=str,
+    show_default=True,
+    help="name of input data file",
+)
+@click.option(
+    "--data_in_group",
+    "-g",
+    default="state",
+    type=str,
+    show_default=True,
+    help="name of input data group",
+)
+@click.option(
+    "--read_initial_state",
+    "-r",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="name of input data file",
 )
 @click.option(
     "--min_iterations",
@@ -125,6 +149,9 @@ def worker(
     len,
     data_out_file,
     save_after_iteration,
+    data_in_file,
+    data_in_group,
+    read_initial_state,
     min_iterations,
     min_total_runtime,
     threads,
@@ -136,6 +163,9 @@ def worker(
         len,
         data_out_file,
         save_after_iteration,
+        data_in_file,
+        data_in_group,
+        read_initial_state,
         min_iterations,
         min_total_runtime,
         int(threads),
@@ -152,16 +182,23 @@ class _Worker:
         len: int,
         data_out_file: str,
         save_after_iteration: Tuple[int, ...],
+        data_in_file: str,
+        data_in_group: str,
+        read_initial_state: bool,
         min_iterations: int,
         min_total_runtime: int,
         threads: int,
     ):
+
         self._msg(log="START")
 
         self._kernel = kernel
         self._len = len
         self._data_out_file = data_out_file
         self._save_after_iteration = save_after_iteration
+        self._data_in_file = data_in_file
+        self._data_in_group = data_in_group
+        self._read_initial_state = read_initial_state
         self._min_iterations = min_iterations
         self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
         self._threads = threads
@@ -175,19 +212,27 @@ class _Worker:
         self._universe = self._init_universe()
 
     def _init_universe(self) -> UniverseBase:
+
         self._msg(log="PROCEDURE", msg="Creating simulation ...")
 
         inventory[self._kernel].load_module()
 
         try:
-            universe = (
-                inventory[self._kernel]
-                .get_class()
-                .from_galaxy(
-                    stars_len=self._len,
-                    threads=self._threads,
+            if self._read_initial_state:
+                universe = inventory[self._kernel].get_class().from_hdf5(
+                    fn = self._data_in_file,
+                    gn = self._data_in_group,
+                    threads = self._threads,
                 )
-            )
+            else:
+                universe = (
+                    inventory[self._kernel]
+                    .get_class()
+                    .from_galaxy(
+                        stars_len=self._len,
+                        threads=self._threads,
+                    )
+                )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
             self._msg(log="EXIT", msg="BAD")
