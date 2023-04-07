@@ -104,6 +104,12 @@ class PointMass:
         return self._v
 
     @property
+    def a(self) -> List[float]:
+        "acceleration"
+
+        return self._a
+
+    @property
     def m(self) -> float:
         "mass"
 
@@ -185,6 +191,18 @@ class UniverseBase(ABC):
         "(scaled) gravitational constant"
 
         return self._G
+
+    @property
+    def scale_r(self) -> float:
+        "scaling factor for distances"
+
+        return self._scale_r
+
+    @property
+    def meta(self) -> dict:
+        "meta data, e.g. for visualizations"
+
+        return self._meta
 
     def add_mass(self, mass: PointMass):
         """
