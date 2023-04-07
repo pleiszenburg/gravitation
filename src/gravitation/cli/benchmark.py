@@ -29,13 +29,15 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import atexit
+from io import TextIOWrapper
 import json
-import math
 import shutil
+from typing import Callable, Generator, List
 
 import termplotlib as tpl
 import click
 import psutil
+from typeguard import typechecked
 
 from ..lib import proc
 from ..lib.load import inventory
@@ -52,39 +54,56 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-def _process_data(kernel, threads, bodies, results_dict, outputlines_list, fh, display):
+@typechecked
+def _process_data(
+    kernel: str,
+    threads: int,
+    bodies: int,
+    results: dict,
+    outputs: List[str],
+    fh: TextIOWrapper,
+    display: str,
+) -> Callable:
     """factory, returning function for reading a worker log in realtime"""
 
-    def callback(stream_id, msg_line):
-        fh.write(msg_line + "\n")
+    def callback(
+        id: int,  # 1 STDOUT, 2 STDERR
+        line: str,
+    ):
+
+        fh.write(f'{line:s}\n')
         if display == "log":
-            print(msg_line)
-        outputlines_list.append(msg_line)
+            print(line)
+        outputs.append(line)
+
         try:
-            msg = json.loads(msg_line)
+            msg = json.loads(line)
         except Exception as e:
-            print(msg_line)
+            print(line)
             raise e
-        results_kernel_dict = results_dict[kernel][threads]
+
+        bests = results[kernel][threads]
         if msg["log"] == "BEST_TIME":
-            if bodies not in results_kernel_dict.keys():
-                results_kernel_dict[bodies] = msg["value"]
-            elif results_kernel_dict[bodies] != msg["value"]:
-                results_kernel_dict[bodies] = msg["value"]
+            if bodies not in bests.keys():
+                bests[bodies] = msg["value"]
+            elif bests[bodies] != msg["value"]:
+                bests[bodies] = msg["value"]
             else:
                 return
         else:
             return
+
         if display != "plot":
             return
-        x = sorted(list(results_kernel_dict.keys()))
-        y = [results_kernel_dict[n] for n in x]
+
+        x = sorted(list(bests.keys()))
+        y = [bests[n] for n in x]
         t = shutil.get_terminal_size((80, 20))
         fig = tpl.figure()
         fig.plot(
             x,
             y,
-            label="{kernel}@{threads}".format(kernel=kernel, threads=threads),
+            label=f"{kernel:s}@{threads:d}",
             width=t.columns,
             height=t.lines,
             extra_gnuplot_arguments=[
@@ -98,17 +117,18 @@ def _process_data(kernel, threads, bodies, results_dict, outputlines_list, fh, d
     return callback
 
 
-def _range(start, end):
+@typechecked
+def _range(start: int, end: int) -> Generator:
     """special range generator, going from 2^start to 2^end with some interpolation"""
-    l = [2**i for i in range(start, end + 1)]
-    l_intp = [2**start]
-    if end > start:
-        l_intp.append(((2**start) + (2 ** (start + 1))) // 2)
-    l_intp.extend(
-        [x for y in zip(l[1:], [i + j for i, j in zip(l[1:], l[:-1])]) for x in y][:-1]
-    )
-    for n in l_intp:
-        yield n
+    assert start <= end
+    state = start
+    while True:
+        value = 2 ** state
+        yield value
+        if state == end:
+            break
+        yield value + value // 2
+        state += 1
 
 
 @click.command(short_help="run a benchmark across kernels")
@@ -217,17 +237,17 @@ def benchmark(
     """run a benchmark across kernels"""
 
     if all_kernels:
-        kernels = sorted(list(inventory.keys()))
+        names = sorted(list(inventory.keys()))
     else:
-        kernels = list(kernel)
+        names = list(kernel)
 
     threads = [MAX_TREADS] if len(threads) == 0 else sorted([int(n) for n in threads])
 
-    results_dict = {
-        kernel_name: {threads_num: dict() for threads_num in range(1, MAX_TREADS + 1)}
-        for kernel_name in kernels
+    results = {
+        name: {threads_num: dict() for threads_num in range(1, MAX_TREADS + 1)}
+        for name in names
     }
-    outputlines_list = []
+    outputs = []
 
     fh = open(logfile, "w", encoding = 'utf-8')
 
@@ -236,18 +256,20 @@ def benchmark(
 
     atexit.register(shutdown)
 
-    for kernel_name in kernels:
-        inventory[kernel_name].load_meta()
-        parallel = inventory[kernel_name]["parallel"]
+    for name in names:
+
+        inventory[name].load_meta()
+        parallel = inventory[name]["parallel"]
         parallel = parallel if isinstance(parallel, bool) else False
         threads_iterator = threads if parallel else [1]
+
         for threads_num in threads_iterator:
             for bodies in _range(*n_body_power_boundaries):
                 proc.run_command(
                     worker_command(
                         data_out_file,
                         interpreter,
-                        kernel_name,
+                        name,
                         "galaxy",
                         {"stars_len": bodies},
                         save_after_iteration,
@@ -257,11 +279,11 @@ def benchmark(
                     ),
                     unbuffer=True,
                     processing=_process_data(
-                        kernel_name,
+                        name,
                         threads_num,
                         bodies,
-                        results_dict,
-                        outputlines_list,
+                        results,
+                        outputs,
                         fh,
                         display,
                     ),
