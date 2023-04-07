@@ -28,10 +28,14 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import atexit
+
 import click
 import h5py
+import numpy as np
 
 from ..kernel._base import UniverseBase
+from ..lib.load import inventory
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
@@ -39,21 +43,58 @@ from ..kernel._base import UniverseBase
 
 @click.command(short_help="verify model results")
 @click.option(
-    "--data_in_file",
+    "--kernel",
+    "-k",
+    type=click.Choice(sorted(list(inventory.keys()))),
+    required=True,
+    help="name of base kernel module",
+)
+@click.option(
+    "--data_out_file",
     "-o",
-    default="data.h5",
+    default="data_out.h5",
     type=str,
     show_default=True,
     help="name of inout data file",
 )
 def verify(
-    data_in_file,
+    kernel: str,
+    data_out_file: str,
 ):
     """verify kernel results"""
 
-    f = h5py.File(data_in_file, mode = 'r')
+    f = h5py.File(data_out_file, mode = 'r')
+    atexit.register(f.close)
 
-    for name in f.keys():
-        print(name, UniverseBase.import_name_group(name))
+    runs = [UniverseBase.import_name_group(key) for key in f.keys()]
 
-    f.close()
+    kernels = sorted({meta['kernel'] for meta in runs})
+    lens = sorted({meta['len'] for meta in runs})
+    steps = sorted({meta['step'] for meta in runs})
+
+    if kernel not in kernels:
+        raise ValueError('no data present for base kernel', kernel)
+
+    for target in kernels:
+        if target == kernel:
+            continue
+        for len_ in lens:
+            for step in steps:
+
+                source_key = UniverseBase.export_name_group(kernel = kernel, len = len_, step = step)
+                if source_key not in f.keys():
+                    print(f'No data for source {source_key:s}')
+                    continue
+
+                target_key = UniverseBase.export_name_group(kernel = target, len = len_, step = step)
+                if target_key not in f.keys():
+                    print(f'No data for target {target_key:s}')
+                    continue
+
+                print(f'Match {kernel:s} against {target:s}: len={len_:d} step={step:d}')
+
+                source_r = f[source_key]['r'][...]
+                target_r = f[target_key]['r'][...]
+                dist = np.sqrt(np.add.reduce((target_r - source_r) ** 2, axis = 1))
+
+                print(dist.min(), dist.max(), dist.mean())
