@@ -15,3 +15,4 @@ dist/
 *.egg-info
 pip-wheel-metadata/
 .old/
+*.h5
