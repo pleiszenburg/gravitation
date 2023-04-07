@@ -34,9 +34,11 @@ import json
 import platform
 import sys
 import traceback
+from typing import List, Tuple
 
 import click
 import psutil
+from typeguard import typechecked
 
 try:
     import cpuinfo
@@ -48,6 +50,7 @@ try:
 except ModuleNotFoundError:
     GPUtil = None
 
+from ..kernel._base_ import universe_base
 from ..lib.load import inventory
 from ..lib.simulation import create_simulation, store_simulation
 from ..lib.timing import BestRunTimer, ElapsedTimer
@@ -135,151 +138,210 @@ def worker(
     min_total_runtime,
     threads,
 ):
-    """isolated single-kernel benchmark worker"""
+    "isolated single-kernel benchmark worker entry point"
 
-    def _msg(**d):
-        sys.stdout.write(json.dumps(d) + "\n")
-        sys.stdout.flush()
+    _Worker(
+        kernel,
+        scenario,
+        scenario_param,
+        data_out_file,
+        save_after_iteration,
+        min_iterations,
+        min_total_runtime,
+        int(threads),
+    ).run()
 
-    def _step():
+
+@typechecked
+class _Worker:
+    "isolated single-kernel benchmark worker class"
+
+    def __init__(
+        self,
+        kernel: str,
+        scenario: str,
+        scenario_param: str,
+        data_out_file: str,
+        save_after_iteration: Tuple[int, ...],
+        min_iterations: int,
+        min_total_runtime: int,
+        threads: int,
+    ):
+
+        self._msg(log="START")
+
+        self._kernel = kernel
+        self._scenario = scenario
+        self._scenario_param = json.loads(scenario_param)
+        self._data_out_file = data_out_file
+        self._save_after_iteration = save_after_iteration
+        self._min_iterations = min_iterations
+        self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
+        self._threads = threads
+
+        self._counter = 0
+        self._rt = BestRunTimer()  # runtime
+        self._gt = BestRunTimer()  # gc time
+        self._et = None  # elapsed time, set up later
+
+        self._msg_inputs()
+        self._universe = self._init_universe()
+
+    def _init_universe(self) -> universe_base:
+
+        self._msg(log="PROCEDURE", msg="Creating simulation ...")
+
+        inventory[self._kernel].load_module()
+
         try:
-            gc.collect()
-            rt.start()
-            s.step()
-            rt_ = rt.stop()
-            gt.start()
-            gc.collect()
-            gt_ = gt.stop()
-        except Exception:
-            _msg(log="ERROR", msg=traceback.format_exc())
-            _msg(log="EXIT", msg="BAD")
-            sys.exit()
-        counter[0] += 1
-        if counter[0] in save_after_iteration:
-            _store()
-        _msg(log="STEP", runtime=rt_, gctime=gt_, counter=counter[0])
-        _msg(log="BEST_TIME", value=rt.min)
-
-    def _store():
-        _msg(log="PROCEDURE", msg=f"Saving data after step {counter[0]:d} ...")
-        try:
-            store_simulation(
-                s,
-                data_out_file,
-                f"kernel={kernel:s};scenario={scenario:s};len={len(s):d};step={counter[0]:d}",
+            universe = create_simulation(
+                scenario=self._scenario,
+                universe_class=inventory[self._kernel].get_class(),
+                scenario_param=self._scenario_param,
+                threads=self._threads,
             )
         except Exception:
-            _msg(log="ERROR", msg=traceback.format_exc())
-            _msg(log="EXIT", msg="BAD")
+            self._msg(log="ERROR", msg=traceback.format_exc())
+            self._msg(log="EXIT", msg="BAD")
             sys.exit()
-        _msg(log="PROCEDURE", msg=f"Data saved after step {counter[0]:d}.")
 
-    _msg(log="START")
+        self._msg(log="PROCEDURE", msg="Simulation created.")
+        self._msg(log="SIZE", value=len(universe))
 
-    counter = [0]
-    scenario_param = json.loads(scenario_param)
-    threads = int(threads)
+        return universe
 
-    _msg(
-        log="INPUT",
-        simulation=dict(
-            kernel=kernel,
-            scenario=scenario,
-            scenario_param=scenario_param,
-            min_iterations=min_iterations,
-            min_total_runtime=min_total_runtime,
-            threads=threads,
-        ),
-        python=dict(
-            build=list(platform.python_build()),
-            compiler=platform.python_compiler(),
-            implementation=platform.python_implementation(),
-            version=list(sys.version_info),
-        ),
-        platform=dict(
-            system=platform.system(),
-            release=platform.release(),
-            version=platform.version(),
-            machine=platform.machine(),
-            processor=platform.processor(),
-            cores=psutil.cpu_count(logical=False),
-            threads=MAX_TREADS,
-            _cpu=cpuinfo.get_cpu_info() if cpuinfo is not None else {},
-            _gpu=[
-                {
-                    n: getattr(gpu, n)
-                    for n in dir(gpu)
-                    if not n.startswith("_") and n not in ("serial", "uuid")
-                }
-                for gpu in GPUtil.getGPUs()
-            ]
-            if GPUtil is not None
-            else {},
-        ),
-    )
+    @staticmethod
+    def _msg(**d):
 
-    min_total_runtime *= 10**9  # convert to ns
-    inventory[kernel].load_module()
+        sys.stdout.write(f'{json.dumps(d):s}\n')
+        sys.stdout.flush()
 
-    _msg(log="PROCEDURE", msg="Creating simulation ...")
-    try:
-        s = create_simulation(
-            scenario=scenario,
-            universe_class=inventory[kernel].get_class(),
-            scenario_param=scenario_param,
-            threads=threads,
+    def _msg_inputs(self):
+
+        self._msg(
+            log="INPUT",
+            simulation=dict(
+                kernel=self._kernel,
+                scenario=self._scenario,
+                scenario_param=self._scenario_param,
+                min_iterations=self._min_iterations,
+                min_total_runtime=self._min_total_runtime,
+                threads=self._threads,
+            ),
+            python=dict(
+                build=list(platform.python_build()),
+                compiler=platform.python_compiler(),
+                implementation=platform.python_implementation(),
+                version=list(sys.version_info),
+            ),
+            platform=dict(
+                system=platform.system(),
+                release=platform.release(),
+                version=platform.version(),
+                machine=platform.machine(),
+                processor=platform.processor(),
+                cores=psutil.cpu_count(logical=False),
+                threads=MAX_TREADS,
+                _cpu=cpuinfo.get_cpu_info() if cpuinfo is not None else {},
+                _gpu=[
+                    {
+                        n: getattr(gpu, n)
+                        for n in dir(gpu)
+                        if not n.startswith("_") and n not in ("serial", "uuid")
+                    }
+                    for gpu in GPUtil.getGPUs()
+                ]
+                if GPUtil is not None
+                else {},
+            ),
         )
-    except Exception:
-        _msg(log="ERROR", msg=traceback.format_exc())
-        _msg(log="EXIT", msg="BAD")
+
+    def _step(self):
+
+        try:
+            gc.collect()
+            self._rt.start()
+            self._universe.step()
+            rt_ = self._rt.stop()
+            self._gt.start()
+            gc.collect()
+            gt_ = self._gt.stop()
+        except Exception:
+            self._msg(log="ERROR", msg=traceback.format_exc())
+            self._msg(log="EXIT", msg="BAD")
+            sys.exit()
+
+        self._counter += 1
+        if self._counter in self._save_after_iteration:
+            self._store()
+
+        self._msg(log="STEP", runtime=rt_, gctime=gt_, counter=self._counter)
+        self._msg(log="BEST_TIME", value=self._rt.min)
+
+    def _store(self):
+
+        self._msg(log="PROCEDURE", msg=f"Saving data after step {self._counter:d} ...")
+
+        try:
+            store_simulation(
+                self._universe,
+                self._data_out_file,
+                f"kernel={self._kernel:s};scenario={self._scenario:s};len={len(self._universe):d};step={self._counter:d}",
+            )
+        except Exception:
+            self._msg(log="ERROR", msg=traceback.format_exc())
+            self._msg(log="EXIT", msg="BAD")
+            sys.exit()
+
+        self._msg(log="PROCEDURE", msg=f"Data saved after step {self._counter:d}.")
+
+    def run(self):
+        "run worker"
+
+        gc.disable()
+
+        if 0 in self._save_after_iteration:
+            self._store()
+
+        self._et = ElapsedTimer()  # elapsed time
+
+        # required min runs
+        for _ in range(self._min_iterations):
+            self._step()
+
+        # does elapsed time satisfy min_total_runtime?
+        et_ = self._et()
+        if et_ >= self._min_total_runtime:
+            self._msg(log="PROCEDURE", msg="Minimum steps sufficient.")
+            self._msg(log="EXIT", msg="OK")
+            sys.exit()
+
+        self._msg(log="PROCEDURE", msg="Extra steps required.")
+        time_remaining = self._min_total_runtime - et_
+        iterations_remaining = time_remaining // et_ * self._min_iterations
+
+        # required extra runs until min_total_runtime
+        for _ in range(iterations_remaining):
+            self._step()
+
+        self._msg(log="EXIT", msg="OK")
         sys.exit()
-    _msg(log="PROCEDURE", msg="Simulation created.")
-    _msg(log="SIZE", value=len(s))
-
-    rt = BestRunTimer()  # runtime
-    gt = BestRunTimer()  # gc time
-    et = ElapsedTimer()  # elapsed time
-
-    gc.disable()
-
-    if 0 in save_after_iteration:
-        _store()
-
-    # required min runs
-    for _ in range(min_iterations):
-        _step()
-
-    # does elapsed time satisfy min_total_runtime?
-    et_ = et()
-    if et_ >= min_total_runtime:
-        _msg(log="PROCEDURE", msg="Minimum steps sufficient.")
-        _msg(log="EXIT", msg="OK")
-        sys.exit()
-
-    _msg(log="PROCEDURE", msg="Extra steps required.")
-    time_remaining = min_total_runtime - et_
-    iterations_remaining = time_remaining // et_ * min_iterations
-
-    # required extra runs until min_total_runtime
-    for _ in range(iterations_remaining):
-        _step()
-
-    _msg(log="EXIT", msg="OK")
-    sys.exit()
 
 
+@typechecked
 def worker_command(
-    data_out_file,
-    interpreter,
-    kernel,
-    scenario,
-    scenario_param,
-    save_after_iteration,
-    min_iterations,
-    min_total_runtime,
-    threads,
-):
-    """returns command list for use with subprocess.Popen"""
+    data_out_file: str,
+    interpreter: str,
+    kernel: str,
+    scenario: str,
+    scenario_param: dict,
+    save_after_iteration: Tuple[int, ...],
+    min_iterations: int,
+    min_total_runtime: int,
+    threads: int,
+) -> List[str]:
+    "returns command list for use with subprocess.Popen"
+
     return [
         interpreter,
         "-c",
