@@ -55,25 +55,40 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 
 
 @typechecked
-def _process_data(
-    kernel: str,
-    threads: int,
-    bodies: int,
-    results: dict,
-    outputs: List[str],
-    fh: TextIOWrapper,
-    display: str,
-) -> Callable:
-    """factory, returning function for reading a worker log in realtime"""
+class _Processing:
+    "reading a worker log in realtime"
 
-    def callback(
+    def __init__(
+        self,
+        kernel: str,
+        threads: int,
+        bodies: int,
+        results: dict,
+        outputs: List[str],
+        fh: TextIOWrapper,
+        display: str,
+    ):
+
+        self._kernel = kernel
+        self._threads = threads
+        self._bodies = bodies
+        self._results = results
+        self._outputs = outputs
+        self._fh = fh
+        self._display = display
+
+        self._counter = 0
+
+    def __call__(
+        self,
         id: int,  # 1 STDOUT, 2 STDERR
         line: str,
     ):
-        fh.write(f"{line:s}\n")
-        if display == "log":
+
+        self._fh.write(f"{line:s}\n")
+        if self._display == "log":
             print(line)
-        outputs.append(line)
+        self._outputs.append(line)
 
         try:
             msg = json.loads(line)
@@ -81,18 +96,21 @@ def _process_data(
             print(line)
             raise e
 
-        bests = results[kernel][threads]
+        if msg["log"] == "STEP":
+            self._counter = msg["counter"]
+
+        bests = self._results[self._kernel][self._threads]
         if msg["log"] == "BEST_TIME":
-            if bodies not in bests.keys():
-                bests[bodies] = msg["value"]
-            elif bests[bodies] != msg["value"]:
-                bests[bodies] = msg["value"]
+            if self._bodies not in bests.keys():
+                bests[self._bodies] = msg["value"]
+            elif bests[self._bodies] > msg["value"]:
+                bests[self._bodies] = msg["value"]
             else:
                 return
         else:
             return
 
-        if display != "plot":
+        if self._display != "plot":
             return
 
         x = sorted(list(bests.keys()))
@@ -102,7 +120,7 @@ def _process_data(
         fig.plot(
             x,
             y,
-            label=f"{kernel:s}@{threads:d}",
+            label=f"{self._kernel:s} / t={self._threads:d} / n={self._bodies:d} / i={self._counter:d} / b={y[-1]:.02e}s",
             width=t.columns,
             height=t.lines,
             extra_gnuplot_arguments=[
@@ -112,8 +130,6 @@ def _process_data(
             ],
         )
         fig.show()
-
-    return callback
 
 
 @typechecked
@@ -275,7 +291,7 @@ def benchmark(
                         threads_num,
                     ),
                     unbuffer=True,
-                    processing=_process_data(
+                    processing=_Processing(
                         name,
                         threads_num,
                         bodies,
