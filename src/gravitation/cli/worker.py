@@ -50,9 +50,8 @@ try:
 except ModuleNotFoundError:
     GPUtil = None
 
-from ..kernel._base_ import universe_base
+from ..kernel._base import UniverseBase
 from ..lib.load import inventory
-from ..lib.simulation import create_simulation, store_simulation
 from ..lib.timing import BestRunTimer, ElapsedTimer
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -75,18 +74,11 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     help="name of kernel module",
 )
 @click.option(
-    "--scenario",
-    default="galaxy",
-    type=str,
+    "--len",
+    default=2000,
+    type=int,
     show_default=True,
-    help="what to simulate",
-)
-@click.option(
-    "--scenario_param",
-    default="{}",
-    type=str,
-    show_default=True,
-    help="JSON string with scenario parameters",
+    help="number of point masses",
 )
 @click.option(
     "--data_out_file",
@@ -130,8 +122,7 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 )
 def worker(
     kernel,
-    scenario,
-    scenario_param,
+    len,
     data_out_file,
     save_after_iteration,
     min_iterations,
@@ -142,8 +133,7 @@ def worker(
 
     _Worker(
         kernel,
-        scenario,
-        scenario_param,
+        len,
         data_out_file,
         save_after_iteration,
         min_iterations,
@@ -159,8 +149,7 @@ class _Worker:
     def __init__(
         self,
         kernel: str,
-        scenario: str,
-        scenario_param: str,
+        len: int,
         data_out_file: str,
         save_after_iteration: Tuple[int, ...],
         min_iterations: int,
@@ -171,8 +160,7 @@ class _Worker:
         self._msg(log="START")
 
         self._kernel = kernel
-        self._scenario = scenario
-        self._scenario_param = json.loads(scenario_param)
+        self._len = len
         self._data_out_file = data_out_file
         self._save_after_iteration = save_after_iteration
         self._min_iterations = min_iterations
@@ -187,18 +175,16 @@ class _Worker:
         self._msg_inputs()
         self._universe = self._init_universe()
 
-    def _init_universe(self) -> universe_base:
+    def _init_universe(self) -> UniverseBase:
 
         self._msg(log="PROCEDURE", msg="Creating simulation ...")
 
         inventory[self._kernel].load_module()
 
         try:
-            universe = create_simulation(
-                scenario=self._scenario,
-                universe_class=inventory[self._kernel].get_class(),
-                scenario_param=self._scenario_param,
-                threads=self._threads,
+            universe = inventory[self._kernel].get_class().from_galaxy(
+                stars_len = self._len,
+                threads = self._threads,
             )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
@@ -222,8 +208,7 @@ class _Worker:
             log="INPUT",
             simulation=dict(
                 kernel=self._kernel,
-                scenario=self._scenario,
-                scenario_param=self._scenario_param,
+                stars_len=self._len,
                 min_iterations=self._min_iterations,
                 min_total_runtime=self._min_total_runtime,
                 threads=self._threads,
@@ -261,11 +246,18 @@ class _Worker:
         try:
             gc.collect()
             self._rt.start()
-            self._universe.step()
+            self._universe.step_stage1()
             rt_ = self._rt.stop()
             self._gt.start()
             gc.collect()
             gt_ = self._gt.stop()
+        except Exception:
+            self._msg(log="ERROR", msg=traceback.format_exc())
+            self._msg(log="EXIT", msg="BAD")
+            sys.exit()
+
+        try:
+            self._universe.step(stage1 = False)
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
             self._msg(log="EXIT", msg="BAD")
@@ -283,10 +275,9 @@ class _Worker:
         self._msg(log="PROCEDURE", msg=f"Saving data after step {self._counter:d} ...")
 
         try:
-            store_simulation(
-                self._universe,
-                self._data_out_file,
-                f"kernel={self._kernel:s};scenario={self._scenario:s};len={len(self._universe):d};step={self._counter:d}",
+            self._universe.to_hdf5(
+                fn = self._data_out_file,
+                gn = f"kernel={self._kernel:s};len={len(self._universe):d};step={self._counter:d}",
             )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
@@ -333,8 +324,7 @@ def worker_command(
     data_out_file: str,
     interpreter: str,
     kernel: str,
-    scenario: str,
-    scenario_param: dict,
+    len: int,
     save_after_iteration: Tuple[int, ...],
     min_iterations: int,
     min_total_runtime: int,
@@ -349,10 +339,8 @@ def worker_command(
         "worker",
         "--kernel",
         kernel,
-        "--scenario",
-        scenario,
-        "--scenario_param",
-        json.dumps(scenario_param),
+        "--len",
+        f"{len:d}",
         "--data_out_file",
         data_out_file,
         *list(
