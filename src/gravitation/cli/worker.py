@@ -126,7 +126,7 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     default=10,
     type=int,
     show_default=True,
-    help="minimum number of simulation steps",
+    help="minimum number of simulation steps; if save_after_iteration is specified and larger, it takes precedence and runs at least this many iterations",
 )
 @click.option(
     "--min_total_runtime",
@@ -179,7 +179,7 @@ class _Worker:
     def __init__(
         self,
         kernel: str,
-        len: int,
+        len_: int,
         data_out_file: str,
         save_after_iteration: Tuple[int, ...],
         data_in_file: str,
@@ -193,13 +193,15 @@ class _Worker:
         self._msg(log="START")
 
         self._kernel = kernel
-        self._len = len
+        self._len = len_
         self._data_out_file = data_out_file
         self._save_after_iteration = save_after_iteration
         self._data_in_file = data_in_file
         self._data_in_group = data_in_group
         self._read_initial_state = read_initial_state
         self._min_iterations = min_iterations
+        if len(self._save_after_iteration) > 0 and max(self._save_after_iteration) > self._min_iterations:
+            self._min_iterations = max(self._save_after_iteration)
         self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
         self._threads = threads
 
@@ -224,6 +226,7 @@ class _Worker:
                     gn = self._data_in_group,
                     threads = self._threads,
                 )
+                assert self._len == len(universe)
             else:
                 universe = (
                     inventory[self._kernel]
@@ -376,13 +379,16 @@ def worker_command(
     kernel: str,
     len: int,
     save_after_iteration: Tuple[int, ...],
+    data_in_file,
+    data_in_group,
+    read_initial_state,
     min_iterations: int,
     min_total_runtime: int,
     threads: int,
 ) -> List[str]:
     "returns command list for use with subprocess.Popen"
 
-    return [
+    cmd = [
         interpreter,
         "-c",
         "from gravitation.cli import cli; cli()",
@@ -405,3 +411,14 @@ def worker_command(
         "--threads",
         f"{threads:d}",
     ]
+
+    if read_initial_state:
+        cmd.extend([
+            '--data_in_file',
+            data_in_file,
+            '--data_in_group',
+            data_in_group,
+            '--read_initial_state'
+        ])
+
+    return cmd
