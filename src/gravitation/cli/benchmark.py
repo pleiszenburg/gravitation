@@ -32,13 +32,14 @@ import atexit
 from io import TextIOWrapper
 import json
 import shutil
-from typing import Callable, Generator, List
+from typing import Generator, List
 
 import termplotlib as tpl
 import click
 import psutil
 from typeguard import typechecked
 
+from ..kernel._base import UniverseBase
 from ..lib import proc
 from ..lib.load import inventory
 from .worker import worker_command
@@ -79,6 +80,9 @@ class _Processing:
 
         self._counter = 0
 
+        self._error_state = False
+        self._error = None
+
     def __call__(
         self,
         id: int,  # 1 STDOUT, 2 STDERR
@@ -90,11 +94,20 @@ class _Processing:
             print(line)
         self._outputs.append(line)
 
-        try:
-            msg = json.loads(line)
-        except Exception as e:
+        if not self._error_state:
+            try:
+                msg = json.loads(line)
+            except Exception as e:
+                print(line)
+                self._error_state = True
+                self._error = e
+                return
+        else:
+            if line.startswith(' '):
+                print(line)
+                return
             print(line)
-            raise e
+            raise self._error
 
         if msg["log"] == "STEP":
             self._counter = msg["counter"]
@@ -146,6 +159,14 @@ def _range(start: int, end: int) -> Generator:
         state += 1
 
 
+@typechecked
+class _UniverseZero(UniverseBase):
+    "Generating common start universe"
+
+    def step_stage1(self):
+        "not required here"
+
+
 @click.command(short_help="run a benchmark across kernels")
 @click.option(
     "--logfile",
@@ -162,6 +183,30 @@ def _range(start: int, end: int) -> Generator:
     type=str,
     show_default=True,
     help="name of output data file",
+)
+@click.option(
+    "--data_in_file",
+    "-j",
+    default="data_in.h5",
+    type=str,
+    show_default=True,
+    help="name of input data file",
+)
+@click.option(
+    "--data_in_group",
+    "-g",
+    default="state",
+    type=str,
+    show_default=True,
+    help="name of input data group",
+)
+@click.option(
+    "--read_initial_state",
+    "-r",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="name of input data file",
 )
 @click.option(
     "--interpreter",
@@ -239,6 +284,9 @@ def _range(start: int, end: int) -> Generator:
 def benchmark(
     logfile,
     data_out_file,
+    data_in_file,
+    data_in_group,
+    read_initial_state,
     interpreter,
     kernel,
     all_kernels,
@@ -271,6 +319,12 @@ def benchmark(
 
     atexit.register(shutdown)
 
+    if read_initial_state:
+        for bodies in _range(*n_body_power_boundaries):
+            print(f'Creating initial state for {bodies:d} masses (max {2**n_body_power_boundaries[1]:d}) ...')
+            initial_state = _UniverseZero.from_galaxy(stars_len=bodies)
+            initial_state.to_hdf5(fn = data_in_file, gn = f'{data_in_group:s}_{bodies:d}')
+
     for name in names:
         inventory[name].load_meta()
         parallel = inventory[name]["parallel"]
@@ -281,24 +335,27 @@ def benchmark(
             for bodies in _range(*n_body_power_boundaries):
                 proc.run_command(
                     worker_command(
-                        data_out_file,
-                        interpreter,
-                        name,
-                        bodies,
-                        save_after_iteration,
-                        min_iterations,
-                        min_total_runtime,
-                        threads_num,
+                        data_out_file = data_out_file,
+                        interpreter = interpreter,
+                        kernel = name,
+                        len = bodies,
+                        save_after_iteration = save_after_iteration,
+                        data_in_file = data_in_file,
+                        data_in_group = f'{data_in_group:s}_{bodies:d}',
+                        read_initial_state = read_initial_state,
+                        min_iterations = min_iterations,
+                        min_total_runtime = min_total_runtime,
+                        threads = threads_num,
                     ),
                     unbuffer=True,
                     processing=_Processing(
-                        name,
-                        threads_num,
-                        bodies,
-                        results,
-                        outputs,
-                        fh,
-                        display,
+                        kernel = name,
+                        threads = threads_num,
+                        bodies = bodies,
+                        results = results,
+                        outputs = outputs,
+                        fh = fh,
+                        display = display,
                     ),
                 )
                 fh.flush()
