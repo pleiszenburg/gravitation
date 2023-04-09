@@ -29,10 +29,13 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import atexit
+from math import log2
 
 import click
 import h5py
 import numpy as np
+from plotly.offline import plot as _plot
+import plotly.graph_objs as go
 
 from ..kernel._base import UniverseBase
 from ..lib.load import inventory
@@ -43,11 +46,11 @@ from ..lib.load import inventory
 
 @click.command(short_help="verify model results")
 @click.option(
-    "--kernel",
-    "-k",
+    "--reference",
+    "-r",
     type=click.Choice(sorted(list(inventory.keys()))),
     required=True,
-    help="name of base kernel module",
+    help="name of reference kernel to compare against",
 )
 @click.option(
     "--data_out_file",
@@ -55,11 +58,21 @@ from ..lib.load import inventory
     default="data_out.h5",
     type=str,
     show_default=True,
-    help="name of inout data file",
+    help="name of benchmark data output file",
+)
+@click.option(
+    "--html_out",
+    "-o",
+    default="verify.html",
+    type=click.Path(exists=False, file_okay=True, dir_okay=False),
+    show_default=True,
+    required=True,
+    help="name of output html file",
 )
 def verify(
-    kernel: str,
+    reference: str,
     data_out_file: str,
+    html_out: str,
 ):
     """verify kernel results"""
 
@@ -70,31 +83,69 @@ def verify(
 
     kernels = sorted({meta['kernel'] for meta in runs})
     lens = sorted({meta['len'] for meta in runs})
-    steps = sorted({meta['step'] for meta in runs})
+    step = max({meta['step'] for meta in runs})
 
-    if kernel not in kernels:
-        raise ValueError('no data present for base kernel', kernel)
+    if reference not in kernels:
+        raise ValueError('no data present for reference kernel', reference)
 
-    for target in kernels:
-        if target == kernel:
+    x = []
+
+    for len_ in lens:
+
+        key = f'2^{round(log2(len_)):d}'
+        x.extend([key for _ in range(len_)])
+
+    data = {}
+
+    for kernel in kernels:
+
+        if kernel == reference:
             continue
+
+        data[kernel] = []
+
         for len_ in lens:
-            for step in steps:
 
-                source_key = UniverseBase.export_name_group(kernel = kernel, len = len_, step = step)
-                if source_key not in f.keys():
-                    print(f'No data for source {source_key:s}')
-                    continue
+            reference_key = UniverseBase.export_name_group(kernel = reference, len = len_, step = step)
+            kernel_key = UniverseBase.export_name_group(kernel = kernel, len = len_, step = step)
 
-                target_key = UniverseBase.export_name_group(kernel = target, len = len_, step = step)
-                if target_key not in f.keys():
-                    print(f'No data for target {target_key:s}')
-                    continue
+            if reference_key not in f.keys():
+                print(f'No data for reference kernel {reference_key:s}')
+            if kernel_key not in f.keys():
+                print(f'No data for target target {kernel_key:s}')
+            if reference_key not in f.keys() or kernel_key not in f.keys():
+                data[kernel].extend(None for _ in range(len_))
+                continue
 
-                print(f'Match {kernel:s} against {target:s}: len={len_:d} step={step:d}')
+            reference_r = f[reference_key]['r'][...]
+            kernel_r = f[kernel_key]['r'][...]
+            dist = np.sqrt(np.add.reduce((kernel_r - reference_r) ** 2, axis = 1))
+            assert dist.shape == (len_,)
 
-                source_r = f[source_key]['r'][...]
-                target_r = f[target_key]['r'][...]
-                dist = np.sqrt(np.add.reduce((target_r - source_r) ** 2, axis = 1))
+            print(f'Matching {kernel:s}: len={len_:d} step={step:d} min={dist.min():0.02e} max={dist.max():0.02e} mean={dist.mean():0.02e}')
 
-                print(dist.min(), dist.max(), dist.mean())
+            data[kernel].extend([float(n) for n in dist])
+
+    fig = go.Figure()
+
+    for kernel in kernels:
+
+        if kernel == reference:
+            continue
+
+        assert len(x) == len(data[kernel])
+
+        fig.add_trace(go.Box(
+            x=x,
+            y=data[kernel],
+            name=kernel,
+        ))
+
+    fig.update_layout(
+        xaxis_title='items per simulation',
+        yaxis_title=f'location offset step={step:d}',
+        yaxis_type="log",
+        boxmode='group',
+    )
+
+    _plot(fig, filename=html_out)
