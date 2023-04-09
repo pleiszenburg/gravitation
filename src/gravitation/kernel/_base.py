@@ -48,6 +48,8 @@ STATE_STOPPED = 2
 
 DIMS = 3
 
+DEFAULT_DTYPE = 'float64'
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -151,7 +153,7 @@ class UniverseBase(ABC):
         G: float = 6.6740831e-11,  # gravitational constant
         scale_m: float = 1.0,  # scaling factor for mass (for kg)
         scale_r: float = 1.0,  # scaling factor for distances (for m)
-        dtype: str = "float32",  # datatype for numerical computations
+        dtype: str = DEFAULT_DTYPE,  # datatype for numerical computations
         threads: int = 1,  # maximum number of threads
         scaled: bool = False,
         **kwargs: Any,  # catch anything else
@@ -413,7 +415,7 @@ class UniverseBase(ABC):
         T: float = 2.0e12,
         scale_m: float = 1.0e-30,
         scale_r: float = 1.0e-10,
-        dtype: str = "float32",
+        dtype: str = DEFAULT_DTYPE,
         threads: int = 1,
         stars_len: int = 2000,
         r: Tuple[float, float, float] = (0.0, 0.0, 0.0),
