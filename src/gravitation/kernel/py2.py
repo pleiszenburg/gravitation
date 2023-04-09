@@ -30,7 +30,7 @@ specific language governing rights and limitations under the License.
 
 __longname__ = "python-backend (2)"
 __version__ = "0.1.0"
-__description__ = "pure python backend, optimization experiment"
+__description__ = "pure python backend, small optimization experiment"
 __requirements__ = []
 __externalrequirements__ = []
 __interpreters__ = ["python3", "pypy3"]
