@@ -133,7 +133,7 @@ class _Processing:
         fig.plot(
             x,
             y,
-            label=f"{self._kernel:s} / t={self._threads:d} / n={self._bodies:d} / i={self._counter:d} / b={y[-1]:.02e}s",
+            label=f"{self._kernel:s} / t={self._threads:d} / n={self._bodies:d} / i={self._counter:d} / b={y[-1]*1e-9:.02e}s",
             width=t.columns,
             height=t.lines,
             extra_gnuplot_arguments=[
