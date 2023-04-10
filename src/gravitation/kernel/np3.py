@@ -57,7 +57,6 @@ class Universe(UniverseBase):
     __doc__ = __description__
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         self._r = None
@@ -76,7 +75,6 @@ class Universe(UniverseBase):
         self._a2r = None
 
     def start_kernel(self):
-
         # Allocate memory: Object parameters
         self._r = np.zeros((DIMS, len(self)), dtype=self._dtype)
         self._a = np.zeros((DIMS, len(self)), dtype=self._dtype)
@@ -89,9 +87,7 @@ class Universe(UniverseBase):
         # Allocate memory: Temporary variables
         self._relative_r = np.zeros((DIMS, len(self) - 1), dtype=self._dtype)
         self._distance_sq = np.zeros((len(self) - 1,), dtype=self._dtype)
-        self._distance_sqv = np.zeros(
-            (DIMS, len(self) - 1), dtype=self._dtype
-        )
+        self._distance_sqv = np.zeros((DIMS, len(self) - 1), dtype=self._dtype)
         self._distance_inv = np.zeros((len(self) - 1,), dtype=self._dtype)
         self._a_factor = np.zeros((len(self) - 1,), dtype=self._dtype)
         self._a1 = np.zeros((len(self) - 1,), dtype=self._dtype)
@@ -101,13 +97,16 @@ class Universe(UniverseBase):
         self._a2r = np.zeros((DIMS, len(self) - 1), dtype=self._dtype)
 
     def _update_pair(self, i: int, k: int):
-
         np.subtract(
             self._r[:, i, None],
             self._r[:, i + 1 :],
             out=self._relative_r[:, :k],
         )
-        np.multiply(self._relative_r[:, :k], self._relative_r[:, :k], out=self._distance_sqv[:, :k])
+        np.multiply(
+            self._relative_r[:, :k],
+            self._relative_r[:, :k],
+            out=self._distance_sqv[:, :k],
+        )
         np.add.reduce(self._distance_sqv[:, :k], axis=0, out=self._distance_sq[:k])
         np.sqrt(self._distance_sq[:k], out=self._distance_inv[:k])
         np.divide(1.0, self._distance_inv[:k], out=self._distance_inv[:k])
@@ -130,18 +129,15 @@ class Universe(UniverseBase):
         )
 
     def push_stage1(self):
-
         for idx, pm in enumerate(self._masses):
             self._r[:, idx] = pm.r[:]
 
     def step_stage1(self):
-
         self._a[:, :] = 0.0
 
         for row in range(0, len(self) - 1):
             self._update_pair(row, len(self) - 1 - row)
 
     def pull_stage1(self):
-
         for idx, pm in enumerate(self._masses):
             pm.a[:] = [float(v) for v in self._a[:, idx]]

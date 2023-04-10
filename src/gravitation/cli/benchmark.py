@@ -69,7 +69,6 @@ class _Processing:
         fh: TextIOWrapper,
         display: str,
     ):
-
         self._kernel = kernel
         self._threads = threads
         self._bodies = bodies
@@ -88,7 +87,6 @@ class _Processing:
         id: int,  # 1 STDOUT, 2 STDERR
         line: str,
     ):
-
         self._fh.write(f"{line:s}\n")
         if self._display == "log":
             print(line)
@@ -103,7 +101,7 @@ class _Processing:
                 self._error = e
                 return
         else:
-            if line.startswith(' '):
+            if line.startswith(" "):
                 print(line)
                 return
             print(line)
@@ -321,9 +319,11 @@ def benchmark(
 
     if read_initial_state:
         for bodies in _range(*n_body_power_boundaries):
-            print(f'Creating initial state for {bodies:d} masses (max {2**n_body_power_boundaries[1]:d}) ...')
+            print(
+                f"Creating initial state for {bodies:d} masses (max {2**n_body_power_boundaries[1]:d}) ..."
+            )
             initial_state = _UniverseZero.from_galaxy(stars_len=bodies)
-            initial_state.to_hdf5(fn = data_in_file, gn = f'{data_in_group:s}_{bodies:d}')
+            initial_state.to_hdf5(fn=data_in_file, gn=f"{data_in_group:s}_{bodies:d}")
 
     for name in names:
         inventory[name].load_meta()
@@ -335,27 +335,27 @@ def benchmark(
             for bodies in _range(*n_body_power_boundaries):
                 run_command(
                     worker_command(
-                        data_out_file = data_out_file,
-                        interpreter = interpreter,
-                        kernel = name,
-                        len = bodies,
-                        save_after_iteration = save_after_iteration,
-                        data_in_file = data_in_file,
-                        data_in_group = f'{data_in_group:s}_{bodies:d}',
-                        read_initial_state = read_initial_state,
-                        min_iterations = min_iterations,
-                        min_total_runtime = min_total_runtime,
-                        threads = threads_num,
+                        data_out_file=data_out_file,
+                        interpreter=interpreter,
+                        kernel=name,
+                        len=bodies,
+                        save_after_iteration=save_after_iteration,
+                        data_in_file=data_in_file,
+                        data_in_group=f"{data_in_group:s}_{bodies:d}",
+                        read_initial_state=read_initial_state,
+                        min_iterations=min_iterations,
+                        min_total_runtime=min_total_runtime,
+                        threads=threads_num,
                     ),
                     unbuffer=True,
                     processing=_Processing(
-                        kernel = name,
-                        threads = threads_num,
-                        bodies = bodies,
-                        results = results,
-                        outputs = outputs,
-                        fh = fh,
-                        display = display,
+                        kernel=name,
+                        threads=threads_num,
+                        bodies=bodies,
+                        results=results,
+                        outputs=outputs,
+                        fh=fh,
+                        display=display,
                     ),
                 )
                 fh.flush()

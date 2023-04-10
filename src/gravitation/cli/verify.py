@@ -44,6 +44,7 @@ from ..lib.load import inventory
 # CONST
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 @click.command(short_help="verify model results")
 @click.option(
     "--reference",
@@ -76,76 +77,80 @@ def verify(
 ):
     """verify kernel results"""
 
-    f = h5py.File(data_out_file, mode = 'r')
+    f = h5py.File(data_out_file, mode="r")
     atexit.register(f.close)
 
     runs = [UniverseBase.import_name_group(key) for key in f.keys()]
 
-    kernels = sorted({meta['kernel'] for meta in runs})
-    lens = sorted({meta['len'] for meta in runs})
-    step = max({meta['step'] for meta in runs})
+    kernels = sorted({meta["kernel"] for meta in runs})
+    lens = sorted({meta["len"] for meta in runs})
+    step = max({meta["step"] for meta in runs})
 
     if reference not in kernels:
-        raise ValueError('no data present for reference kernel', reference)
+        raise ValueError("no data present for reference kernel", reference)
 
     x = []
 
     for len_ in lens:
-
-        key = f'2^{round(log2(len_)):d}'
+        key = f"2^{round(log2(len_)):d}"
         x.extend([key for _ in range(len_)])
 
     data = {}
 
     for kernel in kernels:
-
         if kernel == reference:
             continue
 
         data[kernel] = []
 
         for len_ in lens:
-
-            reference_key = UniverseBase.export_name_group(kernel = reference, len = len_, step = step)
-            kernel_key = UniverseBase.export_name_group(kernel = kernel, len = len_, step = step)
+            reference_key = UniverseBase.export_name_group(
+                kernel=reference, len=len_, step=step
+            )
+            kernel_key = UniverseBase.export_name_group(
+                kernel=kernel, len=len_, step=step
+            )
 
             if reference_key not in f.keys():
-                print(f'No data for reference kernel {reference_key:s}')
+                print(f"No data for reference kernel {reference_key:s}")
             if kernel_key not in f.keys():
-                print(f'No data for target target {kernel_key:s}')
+                print(f"No data for target target {kernel_key:s}")
             if reference_key not in f.keys() or kernel_key not in f.keys():
                 data[kernel].extend(None for _ in range(len_))
                 continue
 
-            reference_r = f[reference_key]['r'][...]
-            kernel_r = f[kernel_key]['r'][...]
-            dist = np.sqrt(np.add.reduce((kernel_r - reference_r) ** 2, axis = 1))
+            reference_r = f[reference_key]["r"][...]
+            kernel_r = f[kernel_key]["r"][...]
+            dist = np.sqrt(np.add.reduce((kernel_r - reference_r) ** 2, axis=1))
             assert dist.shape == (len_,)
 
-            print(f'Matching {kernel:s}: len={len_:d} step={step:d} min={dist.min():0.02e} max={dist.max():0.02e} mean={dist.mean():0.02e}')
+            print(
+                f"Matching {kernel:s}: len={len_:d} step={step:d} min={dist.min():0.02e} max={dist.max():0.02e} mean={dist.mean():0.02e}"
+            )
 
             data[kernel].extend([float(n) for n in dist])
 
     fig = go.Figure()
 
     for kernel in kernels:
-
         if kernel == reference:
             continue
 
         assert len(x) == len(data[kernel])
 
-        fig.add_trace(go.Box(
-            x=x,
-            y=data[kernel],
-            name=kernel,
-        ))
+        fig.add_trace(
+            go.Box(
+                x=x,
+                y=data[kernel],
+                name=kernel,
+            )
+        )
 
     fig.update_layout(
-        xaxis_title='items per simulation',
-        yaxis_title=f'location offset step={step:d}',
+        xaxis_title="items per simulation",
+        yaxis_title=f"location offset step={step:d}",
         yaxis_type="log",
-        boxmode='group',
+        boxmode="group",
     )
 
     _plot(fig, filename=html_out)

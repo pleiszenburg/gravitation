@@ -48,7 +48,7 @@ STATE_STOPPED = 2
 
 DIMS = 3
 
-DEFAULT_DTYPE = 'float64'
+DEFAULT_DTYPE = "float64"
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -408,7 +408,7 @@ class UniverseBase(ABC):
     def export_name_group(**kwargs) -> str:
         "generate name for HDF5 group"
 
-        return dumps(kwargs, sort_keys = True)
+        return dumps(kwargs, sort_keys=True)
 
     @staticmethod
     def import_name_group(raw: str) -> dict:
@@ -525,7 +525,9 @@ class UniverseBase(ABC):
             # shift by center of galaxy
             r_s = [d + e for d, e in zip(r_s, r)]
 
-            universe.create_mass(name=name, r=r_s, v=v_s, m=m_star * 10 ** gauss(0.0, 1.0))
+            universe.create_mass(
+                name=name, r=r_s, v=v_s, m=m_star * 10 ** gauss(0.0, 1.0)
+            )
 
         universe.shuffle()
 

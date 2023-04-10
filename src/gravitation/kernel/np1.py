@@ -57,7 +57,6 @@ class Universe(UniverseBase):
     __doc__ = __description__
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         self._r = None
@@ -65,7 +64,6 @@ class Universe(UniverseBase):
         self._m = None
 
     def start_kernel(self):
-
         self._r = np.zeros((len(self), DIMS), dtype=self._dtype)
         self._a = np.zeros((len(self), DIMS), dtype=self._dtype)
         self._m = np.zeros((len(self),), dtype=self._dtype)
@@ -74,9 +72,8 @@ class Universe(UniverseBase):
             self._m[idx] = pm.m
 
     def _update_pair(self, i: int):
-
         relative_r = self._r[i, :] - self._r[i + 1 :, :]
-        relative_r_sq = relative_r ** 2
+        relative_r_sq = relative_r**2
         distance_sq = relative_r_sq[:, 0] + relative_r_sq[:, 1] + relative_r_sq[:, 2]
         relative_r = relative_r / np.sqrt(distance_sq)[:, None]
 
@@ -84,22 +81,19 @@ class Universe(UniverseBase):
         a1 = a_factor * self._m[i + 1 :]
         a2 = a_factor * self._m[i]
 
-        self._a[i, :] -= np.sum(relative_r * a1[:, None], axis = 0)
+        self._a[i, :] -= np.sum(relative_r * a1[:, None], axis=0)
         self._a[i + 1 :, :] += relative_r * a2[:, None]
 
     def push_stage1(self):
-
         for idx, pm in enumerate(self._masses):
             self._r[idx, :] = pm.r[:]
 
     def step_stage1(self):
-
         self._a[:, :] = 0.0
 
         for row in range(0, len(self) - 1):
             self._update_pair(row)
 
     def pull_stage1(self):
-
         for idx, pm in enumerate(self._masses):
             pm.a[:] = [float(v) for v in self._a[idx, :]]

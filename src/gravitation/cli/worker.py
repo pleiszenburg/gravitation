@@ -189,7 +189,6 @@ class _Worker:
         min_total_runtime: int,
         threads: int,
     ):
-
         self._msg(log="START")
 
         self._kernel = kernel
@@ -200,7 +199,10 @@ class _Worker:
         self._data_in_group = data_in_group
         self._read_initial_state = read_initial_state
         self._min_iterations = min_iterations
-        if len(self._save_after_iteration) > 0 and max(self._save_after_iteration) > self._min_iterations:
+        if (
+            len(self._save_after_iteration) > 0
+            and max(self._save_after_iteration) > self._min_iterations
+        ):
             self._min_iterations = max(self._save_after_iteration)
         self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
         self._threads = threads
@@ -214,17 +216,20 @@ class _Worker:
         self._universe = self._init_universe()
 
     def _init_universe(self) -> UniverseBase:
-
         self._msg(log="PROCEDURE", msg="Creating simulation ...")
 
         inventory[self._kernel].load_module()
 
         try:
             if self._read_initial_state:
-                universe = inventory[self._kernel].get_class().from_hdf5(
-                    fn = self._data_in_file,
-                    gn = self._data_in_group,
-                    threads = self._threads,
+                universe = (
+                    inventory[self._kernel]
+                    .get_class()
+                    .from_hdf5(
+                        fn=self._data_in_file,
+                        gn=self._data_in_group,
+                        threads=self._threads,
+                    )
                 )
                 assert self._len == len(universe)
             else:
@@ -325,10 +330,10 @@ class _Worker:
             self._universe.to_hdf5(
                 fn=self._data_out_file,
                 gn=self._universe.export_name_group(
-                    kernel = self._kernel,
-                    len = len(self._universe),
-                    step = self._counter,
-                )
+                    kernel=self._kernel,
+                    len=len(self._universe),
+                    step=self._counter,
+                ),
             )
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
@@ -413,12 +418,14 @@ def worker_command(
     ]
 
     if read_initial_state:
-        cmd.extend([
-            '--data_in_file',
-            data_in_file,
-            '--data_in_group',
-            data_in_group,
-            '--read_initial_state'
-        ])
+        cmd.extend(
+            [
+                "--data_in_file",
+                data_in_file,
+                "--data_in_group",
+                data_in_group,
+                "--read_initial_state",
+            ]
+        )
 
     return cmd
