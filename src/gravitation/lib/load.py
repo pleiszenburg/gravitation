@@ -33,7 +33,7 @@ import importlib
 import os
 from typing import Any, Type
 
-from typeguard import typechecked
+from .debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES

@@ -38,7 +38,6 @@ from typing import List, Tuple
 
 import click
 import psutil
-from typeguard import typechecked
 
 try:
     import cpuinfo
@@ -51,6 +50,7 @@ except ModuleNotFoundError:
     GPUtil = None
 
 from ..kernel._base import UniverseBase
+from ..lib.debug import typechecked
 from ..lib.load import inventory
 from ..lib.timing import BestRunTimer, ElapsedTimer
 

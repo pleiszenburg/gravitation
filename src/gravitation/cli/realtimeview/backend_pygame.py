@@ -32,8 +32,8 @@ import sys
 from typing import List, Optional, Tuple
 
 import pygame
-from typeguard import typechecked
 
+from ...lib.debug import typechecked
 from ...lib.load import inventory
 from ...lib.timing import AverageTimer
 

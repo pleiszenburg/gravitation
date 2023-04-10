@@ -34,8 +34,8 @@ import os
 
 import click
 import psutil
-from typeguard import typechecked
 
+from ...lib.debug import typechecked
 from ...lib.load import inventory
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -36,7 +36,7 @@ except ImportError:  # CPython <= 3.6
     time_ns = lambda: int(_time() * 1e9)
     del _time
 
-from typeguard import typechecked
+from .debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES

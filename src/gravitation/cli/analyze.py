@@ -33,7 +33,8 @@ import json
 from typing import List
 
 import click
-from typeguard import typechecked
+
+from ..lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES

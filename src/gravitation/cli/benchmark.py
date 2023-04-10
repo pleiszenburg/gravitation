@@ -37,12 +37,12 @@ from typing import Generator, List
 import termplotlib as tpl
 import click
 import psutil
-from typeguard import typechecked
 
-from ..kernel._base import UniverseBase
-from ..lib import proc
-from ..lib.load import inventory
 from .worker import worker_command
+from ..kernel._base import UniverseBase
+from ..lib.debug import typechecked
+from ..lib.load import inventory
+from ..lib.proc import run_command
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
@@ -333,7 +333,7 @@ def benchmark(
 
         for threads_num in threads_iterator:
             for bodies in _range(*n_body_power_boundaries):
-                proc.run_command(
+                run_command(
                     worker_command(
                         data_out_file = data_out_file,
                         interpreter = interpreter,

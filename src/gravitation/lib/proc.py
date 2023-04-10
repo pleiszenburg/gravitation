@@ -36,7 +36,7 @@ from threading import Thread
 from time import sleep
 from typing import Callable, List, Optional, Tuple
 
-from typeguard import typechecked
+from .debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
