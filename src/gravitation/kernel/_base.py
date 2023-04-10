@@ -31,7 +31,7 @@ specific language governing rights and limitations under the License.
 from abc import ABC, abstractmethod
 from json import dumps, loads
 from math import atan2, cos, pi, sin, sqrt
-from random import random
+from random import gauss, random, shuffle
 from typing import Any, Generator, List, Optional, Tuple
 
 import h5py
@@ -228,6 +228,13 @@ class UniverseBase(ABC):
             m *= self._scale_m
 
         self._masses.append(PointMass(name=name, r=r, v=v, m=m))
+
+    def shuffle(self):
+        """
+        shuffle the list of mass objects
+        """
+
+        shuffle(self._masses)
 
     def start(self):
         """
@@ -518,6 +525,8 @@ class UniverseBase(ABC):
             # shift by center of galaxy
             r_s = [d + e for d, e in zip(r_s, r)]
 
-            universe.create_mass(name=name, r=r_s, v=v_s, m=m_star)
+            universe.create_mass(name=name, r=r_s, v=v_s, m=m_star * 10 ** gauss(0.0, 1.0))
+
+        universe.shuffle()
 
         return universe
