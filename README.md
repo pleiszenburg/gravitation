@@ -77,6 +77,7 @@ All of *gravitation*'s kernels reside in the [kernel sub-module](https://github.
 - Faster (pure) `numpy` implementation(s)
 - Balanced / optimized combinations of `numpy`, `numba` and `numexpr` (for individually both, smaller and larger numbers of bodies)
 - Numpy-implementation via custom `ufunc`, see [here](https://numpy.org/doc/stable/user/c-info.ufunc-tutorial.html) and [here](https://github.com/WarrenWeckesser/ufunclab)
+- [JAX](https://jax.readthedocs.io/en/latest/index.html)
 - [pythran](https://github.com/serge-sans-paille/pythran) backend(s)
 - Kernel(s) compiled with [mypyc](https://github.com/mypyc/mypyc)
 - **Rust** backend(s), also see [here](https://doc.rust-lang.org/std/simd/struct.Simd.html)
