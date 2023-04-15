@@ -28,6 +28,8 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import os
+
 from setuptools import (
     Extension,
     find_packages,
@@ -35,8 +37,6 @@ from setuptools import (
 )
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-import os
-import sys
 import sysconfig
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -48,7 +48,7 @@ __version__ = "0.2.0"
 
 # List all versions of Python which are supported
 confirmed_python_versions = [
-    ("Programming Language :: Python :: %s" % x) for x in "3.6 3.7".split(" ")
+    f"Programming Language :: Python :: 3.{x:d}" for x in range(9, 11 + 1)
 ]
 
 # Fetch readme file
@@ -201,7 +201,6 @@ setup(
     extras_require={
         "dev": [
             "black",
-            # 'pytest',
             "python-lsp-server",
             "setuptools",
             # 'Sphinx',
