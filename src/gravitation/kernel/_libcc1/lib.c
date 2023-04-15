@@ -44,6 +44,42 @@ typedef struct univ {
 
 } univ;
 
+static CDTYPE inline *_aligned_alloc(size_t n) {
+
+    return (CDTYPE*)aligned_alloc(32, n * sizeof(CDTYPE));
+
+}
+
+void univ_alloc(univ *self)
+{
+
+    self->x = _aligned_alloc(self->n);
+    self->y = _aligned_alloc(self->n);
+    self->z = _aligned_alloc(self->n);
+
+    self->ax = _aligned_alloc(self->n);
+    self->ay = _aligned_alloc(self->n);
+    self->az = _aligned_alloc(self->n);
+
+    self->m = _aligned_alloc(self->n);
+
+}
+
+void univ_free(univ *self)
+{
+
+    free(self->x);
+    free(self->y);
+    free(self->z);
+
+    free(self->ax);
+    free(self->ay);
+    free(self->az);
+
+    free(self->m);
+
+}
+
 static void inline _univ_update_pair(univ *self, size_t i, size_t j)
 {
 
