@@ -208,7 +208,7 @@ class _UniverseZero(UniverseBase):
 )
 @click.option(
     "--interpreter",
-    "-i",
+    "-e",
     default="python3",
     type=str,
     show_default=True,
