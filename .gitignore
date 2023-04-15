@@ -16,3 +16,5 @@ dist/
 pip-wheel-metadata/
 .old/
 *.h5
+.backup/
+.vscode/
