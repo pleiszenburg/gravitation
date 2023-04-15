@@ -96,7 +96,7 @@ ext_modules = cythonize(
             "-Wdouble-promotion",
             "-Winline",
             "-Werror",
-            "-mavx2",
+            "-mavx2",  # !!!
         ],
         extra_link_args=["-lm"],
     ),
