@@ -32,7 +32,6 @@ import os
 
 from setuptools import (
     Extension,
-    find_packages,
     setup,
 )
 from Cython.Build import cythonize
@@ -130,10 +129,7 @@ class build_ext_custom(build_ext):
             return filename
 
 
-# Install package
 setup(
-    packages=find_packages(SRC_DIR),
-    package_dir={"": SRC_DIR},
     ext_modules=ext_modules,
     cmdclass={
         "build_ext": build_ext_custom,

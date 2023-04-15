@@ -118,3 +118,18 @@ exclude = '''
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gravitation = [
+    "*.pyx",
+    "*.js",
+    "*.m",
+]
+
+[tool.setuptools.exclude-package-data]
+gravitation = [
+    "cy*/*.c",
+]
