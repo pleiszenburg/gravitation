@@ -1,25 +1,55 @@
 
-black:
-	black .
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# LIB
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-compile_clean:
-	-rm -r build/*
+_clean_c:
+	find src/gravitation/kernel/cy* -name '*.c' -exec rm -f {} +
+
+_clean_bin:
+	find src/ -name '*.dll' -exec rm -f {} +
+	find src/  -name '*.so' -exec rm -f {} +
+
+_clean_octave:
+	find src/ -name 'octave-workspace' -exec rm -f {} +
+
+_clean_plot:
+	find src/ -name '*.htm' -exec rm -f {} +
+	find src/ -name '*.html' -exec rm -f {} +
+
+_clean_py:
 	find src/ -name '*.pyc' -exec rm -f {} +
 	find src/ -name '*.pyo' -exec rm -f {} +
 	find src/ -name '*~' -exec rm -f {} +
 	find src/ -name '__pycache__' -exec rm -fr {} +
-	find src/ -name '*.htm' -exec rm -f {} +
-	find src/ -name '*.html' -exec rm -f {} +
-	find src/ -name '*.so' -exec rm -f {} +
-	find src/gravitation/kernel/cy* -name '*.c' -exec rm -f {} +
 
-compile:
+_clean_release:
+	-rm -r build/*
+	-rm -r dist/*
+	-rm -r pip-wheel-metadata/*
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ENTRY POINTS
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+black:
+	black .
+
+clean:
+	make _clean_release
+	make _clean_py
+#	make _clean_c
+	make _clean_bin
+	make _clean_plot
+
+ext:
 	python setup.py build_ext --inplace
 
+install:
+	pip install -U -e .[dev]
+
 release_clean:
-	make compile_clean
-	find src/ -name 'octave-workspace' -exec rm -f {} +
-	-rm -r dist/*
+	make clean
 	-rm -r src/*.egg-info
 
 release:
