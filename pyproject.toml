@@ -1,5 +1,96 @@
 [build-system]
-requires = ["setuptools", "wheel", "Cython"]
+requires = ["setuptools>=61", "wheel", "Cython"]
+
+[project]
+name = "gravitation"
+description = "n-body-simulation performance test suite"
+authors = [{name = "Sebastian M. Ernst", email = "ernst@pleiszenburg.de"}]
+maintainers = [{name = "Sebastian M. Ernst", email = "ernst@pleiszenburg.de"}]
+keywords = [
+    "benchmark",
+    "test suite",
+    "n-body",
+    "numerical computing",
+    "high-performance computing",
+    "parallelization",
+    "cuda",
+    "gpgpu",
+    "simd",
+    "openmp",
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.7"
+dependencies = [
+    # "click",
+    # "Cython",
+    # "gputil",
+    # "h5py",
+    # "numpy",
+    # "plotly",
+    # "psutil",
+    # "pygame",
+    # "py-cpuinfo",
+    "termplotlib",
+    # "typeguard",
+]
+classifiers = [
+        "Development Status :: 3 - Alpha",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Financial and Insurance Industry",
+        "Intended Audience :: Healthcare Industry",
+        "Intended Audience :: Information Technology",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "Operating System :: MacOS",
+        "Operating System :: POSIX :: BSD",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: C",
+        "Programming Language :: Cython",
+        "Programming Language :: JavaScript",
+        "Programming Language :: Other Scripting Engines",
+        "Topic :: Education",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Astronomy",
+        "Topic :: Scientific/Engineering :: Physics",
+        "Topic :: Scientific/Engineering :: Visualization",
+        "Topic :: Software Development",
+        "Topic :: System :: Benchmark",
+        "Topic :: System :: Distributed Computing",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    # "Jinja2",
+    "python-lsp-server[all]",
+    "setuptools",
+    # "Sphinx",
+    # "sphinx_rtd_theme",
+    # "sphinx-autodoc-typehints",
+    # "myst-parser",
+    # "toml",
+    "twine",
+    "wheel",
+]
+
+[project.scripts]
+gravitation = "gravitation.cli:cli"
+
+[project.urls]
+Home = "https://github.com/pleiszenburg/gravitation"
+Documentation = "https://gravitation.readthedocs.io/en/latest/"
+Source = "https://github.com/pleiszenburg/gravitation"
 
 [tool.black]
 target-version = ['py39']
@@ -23,3 +114,7 @@ exclude = '''
   | env
 )/
 '''
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false

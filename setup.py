@@ -43,38 +43,26 @@ import sysconfig
 # SETUP
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# Package version
-__version__ = "0.2.0"
-
-# List all versions of Python which are supported
-confirmed_python_versions = [
-    f"Programming Language :: Python :: 3.{x:d}" for x in range(9, 11 + 1)
-]
-
-# Fetch readme file
-with open(os.path.join(os.path.dirname(__file__), "README.md"), encoding="utf-8") as f:
-    long_description = f.read()
-
 # Define source directory (path)
 SRC_DIR = "src"
 
 # Prepare list of extension modules (C ...)
 ext_modules = cythonize(
     [
-        Extension(
-            "gravitation.kernel.cy1.core",
-            [os.path.join(SRC_DIR, "gravitation", "kernel", "cy1", "core.pyx")],
-        ),
-        Extension(
-            "gravitation.kernel.cy2.core",
-            [os.path.join(SRC_DIR, "gravitation", "kernel", "cy2", "core.pyx")],
-        ),
-        Extension(
-            "gravitation.kernel.cy4.core",
-            [os.path.join(SRC_DIR, "gravitation", "kernel", "cy4", "core.pyx")],
-            extra_compile_args=["-fopenmp"],
-            extra_link_args=["-fopenmp"],
-        ),
+        # Extension(
+        #     "gravitation.kernel.cy1.core",
+        #     [os.path.join(SRC_DIR, "gravitation", "kernel", "cy1", "core.pyx")],
+        # ),
+        # Extension(
+        #     "gravitation.kernel.cy2.core",
+        #     [os.path.join(SRC_DIR, "gravitation", "kernel", "cy2", "core.pyx")],
+        # ),
+        # Extension(
+        #     "gravitation.kernel.cy4.core",
+        #     [os.path.join(SRC_DIR, "gravitation", "kernel", "cy4", "core.pyx")],
+        #     extra_compile_args=["-fopenmp"],
+        #     extra_link_args=["-fopenmp"],
+        # ),
     ],
     annotate=True,
 ) + [
@@ -96,26 +84,26 @@ ext_modules = cythonize(
         ],
         extra_link_args=["-lm"],
     ),
-    Extension(
-        "gravitation.kernel._lib4_.lib",
-        [os.path.join(SRC_DIR, "gravitation", "kernel", "_lib4_", "lib.c")],
-        extra_compile_args=[
-            "-std=gnu11",
-            "-fPIC",
-            "-O3",
-            "-ffast-math",
-            "-march=native",
-            "-mtune=native",
-            "-mfpmath=sse",
-            "-fopenmp",
-            "-Wall",
-            "-Wdouble-promotion",
-            "-Winline",
-            "-Wno-maybe-uninitialized",
-            "-Werror",
-        ],
-        extra_link_args=["-lm", "-fopenmp"],
-    ),
+    # Extension(
+    #     "gravitation.kernel._lib4_.lib",
+    #     [os.path.join(SRC_DIR, "gravitation", "kernel", "_lib4_", "lib.c")],
+    #     extra_compile_args=[
+    #         "-std=gnu11",
+    #         "-fPIC",
+    #         "-O3",
+    #         "-ffast-math",
+    #         "-march=native",
+    #         "-mtune=native",
+    #         "-mfpmath=sse",
+    #         "-fopenmp",
+    #         "-Wall",
+    #         "-Wdouble-promotion",
+    #         "-Winline",
+    #         "-Wno-maybe-uninitialized",
+    #         "-Werror",
+    #     ],
+    #     extra_link_args=["-lm", "-fopenmp"],
+    # ),
 ]
 
 
@@ -144,108 +132,10 @@ class build_ext_custom(build_ext):
 
 # Install package
 setup(
-    name="gravitation",
     packages=find_packages(SRC_DIR),
     package_dir={"": SRC_DIR},
-    version=__version__,
-    description="n-body-simulation performance test suite",
-    long_description=long_description,
-    author="Sebastian M. Ernst",
-    author_email="ernst@pleiszenburg.de",
-    url="https://github.com/pleiszenburg/gravitation",
-    download_url="https://github.com/pleiszenburg/gravitation/archive/v%s.tar.gz"
-    % __version__,
-    license="GPLv2",
-    keywords=[
-        "benchmark",
-        "test suite",
-        "n-body",
-        "numerical computing",
-        "high-performance computing",
-        "parallelization",
-        "cuda",
-        "gpgpu",
-        "simd",
-        "openmp",
-    ],
-    scripts=[],
-    include_package_data=True,
     ext_modules=ext_modules,
     cmdclass={
         "build_ext": build_ext_custom,
     },
-    setup_requires=[
-        "Cython",
-    ],
-    install_requires=[
-        "click",
-        # 'cupy',
-        "Cython",
-        "gputil",
-        "h5py",
-        "joblib",
-        "numba",
-        "numpy",
-        "numexpr",
-        "oct2py",
-        "plotly",
-        "psutil",
-        # 'pycuda',
-        "pygame",
-        "py-cpuinfo",
-        "py_mini_racer",
-        "termplotlib",
-        # 'torch',
-        "typeguard",
-    ],
-    extras_require={
-        "dev": [
-            "black",
-            "python-lsp-server",
-            "setuptools",
-            # 'Sphinx',
-            # 'sphinx_rtd_theme',
-            "twine",
-            "wheel",
-        ]
-    },
-    zip_safe=False,
-    entry_points={
-        "console_scripts": [
-            "gravitation = gravitation.cli:cli",
-        ],
-    },
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Environment :: Console",
-        "Intended Audience :: Developers",
-        "Intended Audience :: Education",
-        "Intended Audience :: Financial and Insurance Industry",
-        "Intended Audience :: Healthcare Industry",
-        "Intended Audience :: Information Technology",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-        "Operating System :: MacOS",
-        "Operating System :: POSIX :: BSD",
-        "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3",
-    ]
-    + confirmed_python_versions
-    + [
-        "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "Programming Language :: C",
-        "Programming Language :: Cython",
-        "Programming Language :: JavaScript",
-        "Programming Language :: Other Scripting Engines",
-        "Topic :: Education",
-        "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Astronomy",
-        "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Visualization",
-        "Topic :: Software Development",
-        "Topic :: System :: Benchmark",
-        "Topic :: System :: Distributed Computing",
-    ],
 )
