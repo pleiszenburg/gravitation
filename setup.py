@@ -36,7 +36,7 @@ from setuptools import (
 )
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-import sysconfig
+# import sysconfig
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # SETUP
@@ -106,32 +106,32 @@ ext_modules = cythonize(
 ]
 
 
-# HACK https://github.com/cython/cython/issues/1740#issuecomment-317556084
-def get_ext_filename_without_platform_suffix(filename):
-    name, ext = os.path.splitext(filename)
-    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
-    if ext_suffix == ext:
-        return filename
-    ext_suffix = ext_suffix.replace(ext, "")
-    idx = name.find(ext_suffix)
-    if idx == -1:
-        return filename
-    else:
-        return name[:idx] + ext
+# # HACK https://github.com/cython/cython/issues/1740#issuecomment-317556084
+# def get_ext_filename_without_platform_suffix(filename):
+#     name, ext = os.path.splitext(filename)
+#     ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+#     if ext_suffix == ext:
+#         return filename
+#     ext_suffix = ext_suffix.replace(ext, "")
+#     idx = name.find(ext_suffix)
+#     if idx == -1:
+#         return filename
+#     else:
+#         return name[:idx] + ext
 
 
-class build_ext_custom(build_ext):
-    def get_ext_filename(self, ext_name):
-        filename = super().get_ext_filename(ext_name)
-        if filename.startswith("lib"):
-            return get_ext_filename_without_platform_suffix(filename)
-        else:
-            return filename
+# class build_ext_custom(build_ext):
+#     def get_ext_filename(self, ext_name):
+#         filename = super().get_ext_filename(ext_name)
+#         if filename.startswith("lib"):
+#             return get_ext_filename_without_platform_suffix(filename)
+#         else:
+#             return filename
 
 
 setup(
     ext_modules=ext_modules,
     cmdclass={
-        "build_ext": build_ext_custom,
+        "build_ext": build_ext,  # build_ext_custom,
     },
 )
