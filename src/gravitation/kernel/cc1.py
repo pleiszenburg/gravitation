@@ -57,6 +57,7 @@ from ._base import UniverseBase
 
 class Universe(UniverseBase):
     __doc__ = __description__
+    _LIB = '_libcc1'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,7 +83,7 @@ class Universe(UniverseBase):
             ]
 
         self._step_stage1_c = ctypes.cdll.LoadLibrary(
-            os.path.join(os.path.dirname(__file__), "_libcc1", f"lib.{sysconfig.get_config_var('SOABI')}.so")
+            os.path.join(os.path.dirname(__file__), self._LIB, f"lib.{sysconfig.get_config_var('SOABI')}.so")
         ).univ_step_stage1
 
         self._step_stage1_c.argtypes = (ctypes.POINTER(Univ),)
