@@ -64,6 +64,7 @@ class Universe(UniverseBase):
 
         self._cdtype = None
         self._step_stage1_c = None
+        self._free_c = None
         self._univ = None
 
     def start_kernel(self):
@@ -82,18 +83,28 @@ class Universe(UniverseBase):
                 ("n", ctypes.c_size_t),
             ]
 
-        self._step_stage1_c = ctypes.cdll.LoadLibrary(
+        lib = ctypes.cdll.LoadLibrary(
             os.path.join(os.path.dirname(__file__), self._LIB, f"lib.{sysconfig.get_config_var('SOABI')}.so")
-        ).univ_step_stage1
+        )
 
+        univ_alloc = lib.univ_alloc
+        univ_alloc.argtypes = (ctypes.POINTER(Univ),)
+
+        self._free_c = lib.univ_free
+        self._free_c.argtypes = (ctypes.POINTER(Univ),)
+
+        self._step_stage1_c = lib.univ_step_stage1
         self._step_stage1_c.argtypes = (ctypes.POINTER(Univ),)
+
         self._univ = Univ()
-        for field in array_fields:
-            getattr(self._univ, field).contents = array_type()
-        for idx, pm in enumerate(self._masses):
-            self._univ.m.contents[idx] = pm.m
         self._univ.g = self._G
         self._univ.n = len(self)
+        univ_alloc(self._univ)
+        for idx, pm in enumerate(self._masses):
+            self._univ.m.contents[idx] = pm.m
+
+    def stop_kernel(self):
+        self._free_c(self._univ)
 
     def push_stage1(self):
         for idx, pm in enumerate(self._masses):
