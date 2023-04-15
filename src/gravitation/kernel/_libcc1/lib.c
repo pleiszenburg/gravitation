@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-	src/gravitation/kernel/_lib1_/lib.c: C single-thread core
+	src/gravitation/kernel/_libcc1/lib.c: C single-thread core
 
 	Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -24,103 +24,73 @@ specific language governing rights and limitations under the License.
 
 */
 
+#include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <string.h>
 
-// Header für erweiterte Integer-Datentypen
-#include <stdint.h>
+#define CDTYPE double
 
-#define UNIVERSUM_DATATYPE float
-#define COUNTER_DATATYPE long
+typedef struct univ {
 
-struct univ {
+    CDTYPE *x, *y, *z;
+    CDTYPE *ax, *ay, *az;
+    CDTYPE *m;
 
-	// Gravitation INIT
-	UNIVERSUM_DATATYPE *X, *Y, *Z;
-	UNIVERSUM_DATATYPE *AX, *AY, *AZ;
-	UNIVERSUM_DATATYPE *M;
+    CDTYPE g;
 
-	UNIVERSUM_DATATYPE G;
+    size_t n;
 
-	// Anzahl der Massen
-	COUNTER_DATATYPE N;
+} univ;
 
-};
-
-
-void step_stage1(struct univ *self)
+static void inline _univ_update_pair(univ *self, size_t i, size_t j)
 {
 
-	// Iteration und Segmentierung
-	COUNTER_DATATYPE i, j, k, seg_len;
+    CDTYPE dx = self->x[i] - self->x[j];
+    CDTYPE dy = self->y[i] - self->y[j];
+    CDTYPE dz = self->z[i] - self->z[j];
 
-	// Vektor für Abstand
-	UNIVERSUM_DATATYPE dx, dy, dz;
-	// Vektor für normalisierten Abstand
-	UNIVERSUM_DATATYPE dnx, dny, dnz;
-	// Hilfsvariblen für Betrag
-	UNIVERSUM_DATATYPE dxx, dyy, dzz, dxyz, dxyzs;
-	// Gravitation Hilfsvarible
-	UNIVERSUM_DATATYPE PHY_Gdxyz;
-	// Beschleunigung Hilfsvarible
-	UNIVERSUM_DATATYPE Ai, Aj;
+    CDTYPE dxx = dx * dx;
+    CDTYPE dyy = dy * dy;
+    CDTYPE dzz = dz * dz;
 
-	// Segmentierung steuern
-	i = 1;
-	j = 0;
-	seg_len = ((*self).N * ((*self).N - 1)) / 2;
+    CDTYPE dxyz = dxx + dyy + dzz;
 
-	// STUFE 1: Beschleunigug
-	for(k = 0; k < seg_len; k++)
-	{
+    CDTYPE dxyzg = self->g / dxyz;
 
-		// Abstand der beiden Punkte vektoriell berechnen
-		dx = (*self).X[i] - (*self).X[j];
-		dy = (*self).Y[i] - (*self).Y[j];
-		dz = (*self).Z[i] - (*self).Z[j];
+    CDTYPE aj = dxyzg * self->m[i];
+    CDTYPE ai = dxyzg * self->m[j];
 
-		// Quadrate ausrechnen
-		dxx = dx * dx;
-		dyy = dy * dy;
-		dzz = dz * dz;
+    dxyz = (CDTYPE)1.0 / (CDTYPE)sqrt(dxyz);
 
-		// Quadrate summieren (Quadrat des Betrags des Vektors)
-		dxyz = dxx + dyy + dzz;
+    dx *= dxyz;
+    dy *= dxyz;
+    dz *= dxyz;
 
-		// Gravitationskonstante durch Quadrats des Betrags des Vektors
-		PHY_Gdxyz = (*self).G / dxyz;
+    self->ax[j] += aj * dx;
+    self->ay[j] += aj * dy;
+    self->az[j] += aj * dz;
 
-		// Betrag der Beschleunigung(en) ausrechnen
-		Aj = PHY_Gdxyz * (*self).M[i];
-		Ai = PHY_Gdxyz * (*self).M[j];
+    self->ax[i] -= ai * dx;
+    self->ay[i] -= ai * dy;
+    self->az[i] -= ai * dz;
 
-		// Wurzel ziehen um Betrag zu bekommen
-		dxyzs = (UNIVERSUM_DATATYPE)1.0 / (UNIVERSUM_DATATYPE)sqrt(dxyz);
+}
 
-		// Abstand normalisieren
-		dnx = dx * dxyzs;
-		dny = dy * dxyzs;
-		dnz = dz * dxyzs;
+void univ_step_stage1(univ *self)
+{
 
-		// Beschleunigung vektoriell ausrechnen (j)
-		(*self).AX[j] = (*self).AX[j] + Aj * dnx;
-		(*self).AY[j] = (*self).AY[j] + Aj * dny;
-		(*self).AZ[j] = (*self).AZ[j] + Aj * dnz;
+    size_t n_mem = sizeof(CDTYPE)*self->n;
 
-		// Beschleunigung vektoriell ausrechnen (i)
-		(*self).AX[i] = (*self).AX[i] - Ai * dnx;
-		(*self).AY[i] = (*self).AY[i] - Ai * dny;
-		(*self).AZ[i] = (*self).AZ[i] - Ai * dnz;
+    memset(self->ax, 0, n_mem);
+    memset(self->ay, 0, n_mem);
+    memset(self->az, 0, n_mem);
 
-		// Segmentierung steuern
-		j++;
-		if(j == i)
-		{
-			i++;
-			j = 0;
-		}
-
-	}
+    for(size_t i = 0; i < self->n - 1; i++){
+        for(size_t j = i + 1; j < self->n; j++){
+            _univ_update_pair(self, i, j);
+        }
+    }
 
 }
