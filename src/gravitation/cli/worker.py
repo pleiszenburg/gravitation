@@ -373,9 +373,10 @@ class _Worker:
         for _ in range(iterations_remaining):
             self._step()
 
+        self._universe.stop()
+
         self._msg(log="EXIT", msg="OK")
         sys.exit()
-
 
 @typechecked
 def worker_command(
