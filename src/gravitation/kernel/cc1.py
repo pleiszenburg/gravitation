@@ -72,7 +72,7 @@ class Universe(UniverseBase):
             ctypes,
             f"c_{dict(float32 = 'float', float64 = 'double')[self._dtype]:s}",
         )
-        array_fields = ["x", "y", "z", "ax", "ay", "az", "m"]
+        array_fields = ["rx", "ry", "rz", "ax", "ay", "az", "m"]
         array_type = self._cdtype * len(self)
 
         class Univ(ctypes.Structure):
@@ -109,9 +109,9 @@ class Universe(UniverseBase):
     def push_stage1(self):
         for idx, pm in enumerate(self._masses):
             (
-                self._univ.x.contents[idx],
-                self._univ.y.contents[idx],
-                self._univ.z.contents[idx],
+                self._univ.rx.contents[idx],
+                self._univ.ry.contents[idx],
+                self._univ.rz.contents[idx],
             ) = pm.r
 
     def step_stage1(self):

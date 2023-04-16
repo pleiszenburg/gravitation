@@ -34,7 +34,7 @@ specific language governing rights and limitations under the License.
 
 typedef struct univ {
 
-    CDTYPE *x, *y, *z;
+    CDTYPE *rx, *ry, *rz;
     CDTYPE *ax, *ay, *az;
     CDTYPE *m;
 
@@ -53,9 +53,9 @@ static CDTYPE inline *_aligned_alloc(size_t n) {
 void univ_alloc(univ *self)
 {
 
-    self->x = _aligned_alloc(self->n);
-    self->y = _aligned_alloc(self->n);
-    self->z = _aligned_alloc(self->n);
+    self->rx = _aligned_alloc(self->n);
+    self->ry = _aligned_alloc(self->n);
+    self->rz = _aligned_alloc(self->n);
 
     self->ax = _aligned_alloc(self->n);
     self->ay = _aligned_alloc(self->n);
@@ -68,9 +68,9 @@ void univ_alloc(univ *self)
 void univ_free(univ *self)
 {
 
-    free(self->x);
-    free(self->y);
-    free(self->z);
+    free(self->rx);
+    free(self->ry);
+    free(self->rz);
 
     free(self->ax);
     free(self->ay);
@@ -83,9 +83,9 @@ void univ_free(univ *self)
 static void inline _univ_update_pair(univ *self, size_t i, size_t j)
 {
 
-    CDTYPE dx = self->x[i] - self->x[j];
-    CDTYPE dy = self->y[i] - self->y[j];
-    CDTYPE dz = self->z[i] - self->z[j];
+    CDTYPE dx = self->rx[i] - self->rx[j];
+    CDTYPE dy = self->ry[i] - self->ry[j];
+    CDTYPE dz = self->rz[i] - self->rz[j];
 
     CDTYPE dxx = dx * dx;
     CDTYPE dyy = dy * dy;

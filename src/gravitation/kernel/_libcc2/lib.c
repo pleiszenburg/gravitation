@@ -36,7 +36,7 @@ specific language governing rights and limitations under the License.
 
 typedef struct univ {
 
-    CDTYPE *x, *y, *z;
+    CDTYPE *rx, *ry, *rz;
     CDTYPE *ax, *ay, *az;
     CDTYPE *m;
 
@@ -55,9 +55,9 @@ static CDTYPE inline *_aligned_alloc(size_t n) {
 void univ_alloc(univ *self)
 {
 
-    self->x = _aligned_alloc(self->n);
-    self->y = _aligned_alloc(self->n);
-    self->z = _aligned_alloc(self->n);
+    self->rx = _aligned_alloc(self->n);
+    self->ry = _aligned_alloc(self->n);
+    self->rz = _aligned_alloc(self->n);
 
     self->ax = _aligned_alloc(self->n);
     self->ay = _aligned_alloc(self->n);
@@ -70,9 +70,9 @@ void univ_alloc(univ *self)
 void univ_free(univ *self)
 {
 
-    free(self->x);
-    free(self->y);
-    free(self->z);
+    free(self->rx);
+    free(self->ry);
+    free(self->rz);
 
     free(self->ax);
     free(self->ay);
@@ -152,14 +152,14 @@ static void inline _univ_update_pair(univ *self, size_t i, size_t j, __m256d g)
 
     // printf(" i == %ld | j == %ld | diff == %ld \n", i, j, diff);
 
-    __m256d xi = _load_256d(diff, i, self->x);
-    __m256d yi = _load_256d(diff, i, self->y);
-    __m256d zi = _load_256d(diff, i, self->z);
+    __m256d xi = _load_256d(diff, i, self->rx);
+    __m256d yi = _load_256d(diff, i, self->ry);
+    __m256d zi = _load_256d(diff, i, self->rz);
     __m256d mi = _load_256d(diff, i, self->m);
 
-    __m256d xj = _mm256_set1_pd(self->x[j]);
-    __m256d yj = _mm256_set1_pd(self->y[j]);
-    __m256d zj = _mm256_set1_pd(self->z[j]);
+    __m256d xj = _mm256_set1_pd(self->rx[j]);
+    __m256d yj = _mm256_set1_pd(self->ry[j]);
+    __m256d zj = _mm256_set1_pd(self->rz[j]);
     __m256d mj = _mm256_set1_pd(self->m[j]);
 
     // printf(" data \n");
