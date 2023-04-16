@@ -101,10 +101,9 @@ class _Processing:
                 self._error = e
                 return
         else:
-            if line.startswith(" "):
-                print(line)
-                return
             print(line)
+            if line.startswith(" "):
+                return
             raise self._error
 
         if msg["log"] == "STEP":
@@ -125,7 +124,7 @@ class _Processing:
             return
 
         x = sorted(list(bests.keys()))
-        y = [bests[n] for n in x]
+        y = [bests[n]*1e-9 for n in x]
         t = shutil.get_terminal_size((80, 20))
         fig = tpl.figure()
         fig.plot(
