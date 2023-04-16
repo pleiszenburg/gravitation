@@ -115,7 +115,7 @@ class Universe(UniverseBase):
             ) = pm.r
 
     def step_stage1(self):
-        self._step_stage1_c(self._univ)
+        self._step_stage1_c(ctypes.pointer(self._univ))
 
     def pull_stage1(self):
         for idx, pm in enumerate(self._masses):
