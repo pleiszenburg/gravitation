@@ -30,7 +30,7 @@ specific language governing rights and limitations under the License.
 
 from abc import ABC, abstractmethod
 from json import dumps, loads
-from math import atan2, cos, pi, sin, sqrt
+from math import atan2, cos, pi, sin, sqrt, isnan
 from random import gauss, random, shuffle
 from typing import Any, Generator, List, Optional, Tuple
 
@@ -449,6 +449,9 @@ class UniverseBase(ABC):
             steps_per_frame=1,  # (meta)
         )
 
+        assert not any(isnan(d) for d in r)
+        assert not any(isnan(d) for d in v)
+
         universe.create_mass(
             name="back hole",
             r=[d for d in r],
@@ -525,8 +528,14 @@ class UniverseBase(ABC):
             # shift by center of galaxy
             r_s = [d + e for d, e in zip(r_s, r)]
 
+            m_star_rand = m_star * 10 ** gauss(0.0, 1.0)
+
+            assert not any(isnan(d) for d in r_s)
+            assert not any(isnan(d) for d in v_s)
+            assert not isnan(m_star_rand)
+
             universe.create_mass(
-                name=name, r=r_s, v=v_s, m=m_star * 10 ** gauss(0.0, 1.0)
+                name=name, r=r_s, v=v_s, m=m_star_rand,
             )
 
         universe.shuffle()
