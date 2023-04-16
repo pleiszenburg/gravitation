@@ -118,6 +118,14 @@ class PointMass:
 
         return self._m
 
+    def assert_not_isnan(self):
+        "check for NaN"
+
+        assert not any(isnan(d) for d in self._r)
+        assert not any(isnan(d) for d in self._v)
+        assert not any(isnan(d) for d in self._a)
+        assert not isnan(self._m)
+
     def move(self, T: float):
         """
         moves with precomputed acceleration (base stage 2 implementation)
@@ -202,6 +210,11 @@ class UniverseBase(ABC):
         "meta data, e.g. for visualizations"
 
         return self._meta
+
+    @property
+    def masses(self) -> list:
+
+        return self._masses
 
     def add_mass(self, mass: PointMass):
         """
@@ -308,8 +321,11 @@ class UniverseBase(ABC):
 
     def step_stage3(self):
         """
-        runs stage 3 (increments simulation time) of one simulation (time-) step
+        runs stage 3 (increments simulation time) of one simulation (time-) step, assert nan
         """
+
+        for mass in self._masses:
+            mass.assert_not_isnan()
 
         self._t += self._T
 
@@ -449,15 +465,13 @@ class UniverseBase(ABC):
             steps_per_frame=1,  # (meta)
         )
 
-        assert not any(isnan(d) for d in r)
-        assert not any(isnan(d) for d in v)
-
         universe.create_mass(
             name="back hole",
             r=[d for d in r],
             v=[d for d in v],
             m=m_hole,
         )
+        universe.masses[-1].assert_not_isnan()
 
         for n in range(stars_len - 1):
             alpha = random() * 2.0 * pi
@@ -530,13 +544,10 @@ class UniverseBase(ABC):
 
             m_star_rand = m_star * 10 ** gauss(0.0, 1.0)
 
-            assert not any(isnan(d) for d in r_s)
-            assert not any(isnan(d) for d in v_s)
-            assert not isnan(m_star_rand)
-
             universe.create_mass(
                 name=name, r=r_s, v=v_s, m=m_star_rand,
             )
+            universe.masses[-1].assert_not_isnan()
 
         universe.shuffle()
 
