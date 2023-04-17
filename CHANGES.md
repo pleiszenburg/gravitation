@@ -7,6 +7,7 @@
 - FIX: CLI bug in `benchmark` command would prevent pointing to another interpreter for the workers
 - FIX: Dependency changed from `asciiplotlib` to `termplotlib`
 - FIX: Make CLI run with recent versions of `click`
+- DEV: Renamed `realtimeview` sub-command to more suitable `view` command
 - DEV: Cleanup of packaging and setup, moved to `pyproject.toml` as far as possible
 - DEV: Refactor of entire code base, modernization, typing
 - DEV: Environment varable `GRAVITATION_DEBUG` can be set to `1`, enabling run-time type checking

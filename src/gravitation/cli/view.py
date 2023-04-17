@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/realtimeview/__init__.py: realtimeview command
+    src/gravitation/view.py: view command
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -29,14 +29,13 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import importlib
-import json
 import os
 
 import click
 import psutil
 
-from ...lib.debug import typechecked
-from ...lib.load import inventory
+from ..lib.debug import typechecked
+from ..lib.load import inventory
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
@@ -54,9 +53,9 @@ def _get_backends() -> list[str]:
     """auto-detects backends"""
     return sorted(
         [
-            item[8:-3] if item.lower().endswith(".py") else item[8:]
-            for item in os.listdir(os.path.dirname(__file__))
-            if item.startswith("backend_")
+            item[:-3] if item.lower().endswith(".py") else item
+            for item in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'view'))
+            if not item.startswith("_")
         ]
     )
 
@@ -105,7 +104,7 @@ def _get_backends() -> list[str]:
     show_default=True,
     help="number of threads/processes for parallel implementations",
 )
-def realtimeview(
+def view(
     kernel: str,
     len: int,
     steps_per_frame: int,
@@ -127,8 +126,8 @@ def realtimeview(
         max_iterations=None if max_iterations == -1 else max_iterations,
     )
 
-    Realtimeview = importlib.import_module(
-        f"gravitation.cli.realtimeview.backend_{backend:s}"
+    viewer = importlib.import_module(
+        f"gravitation.view.{backend:s}"
     ).Realtimeview
 
-    Realtimeview(*args, **kwargs).loop()
+    viewer(*args, **kwargs).loop()

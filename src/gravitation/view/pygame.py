@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/realtimeview/backend_pygame.py: realtimeview pygame backend
+    src/gravitation/view/pygame.py: pygame view backend
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -33,9 +33,9 @@ from typing import List, Optional, Tuple
 
 import pygame
 
-from ...lib.debug import typechecked
-from ...lib.load import inventory
-from ...lib.timing import AverageTimer
+from ..lib.debug import typechecked
+from ..lib.load import inventory
+from ..lib.timing import AverageTimer
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
