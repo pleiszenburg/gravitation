@@ -43,7 +43,7 @@ from ..lib.timing import AverageTimer
 
 
 @typechecked
-class Realtimeview:
+class Viewer:
     """
     viewer based on pygame
     """

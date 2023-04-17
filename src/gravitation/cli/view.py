@@ -128,6 +128,6 @@ def view(
 
     viewer = importlib.import_module(
         f"gravitation.view.{backend:s}"
-    ).Realtimeview
+    ).Viewer
 
     viewer(*args, **kwargs).loop()
