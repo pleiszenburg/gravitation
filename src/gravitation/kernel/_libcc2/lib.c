@@ -46,6 +46,12 @@ typedef struct univ {
 
 } univ;
 
+typedef struct __m256d_3d {
+
+    __m256d x, y, z;
+
+} v3;
+
 static CDTYPE inline *_aligned_alloc(size_t n) {
 
     return (CDTYPE*)aligned_alloc(32, n * sizeof(CDTYPE));
@@ -97,6 +103,23 @@ static __m256d inline _load_256d(size_t diff, size_t i, CDTYPE *d){
 
 }
 
+static __m256d inline _mask_256d(__m256d d, size_t diff){
+
+    if (diff == 4) {
+        return d;
+    }
+    if (diff <= 3) {
+        d[3] = 0.0;
+    }
+    if (diff <= 2) {
+        d[2] = 0.0;
+    }
+    if (diff == 1) {
+        d[1] = 0.0;
+    }
+    return d;
+}
+
 static double inline _sum_256d(__m256d d, size_t diff){
 
     if (diff == 4) {
@@ -119,7 +142,7 @@ static void inline _sub_256d(
 
     size_t l;
 
-    for (size_t k = 0; k < diff; k ++) {
+    for (size_t k = 0; k < diff; k++) {
         l = i + k;
         dx[l] -= x[k];
         dy[l] -= y[k];
@@ -140,39 +163,38 @@ static void inline _print_a4(CDTYPE *d, size_t i){
 //     }
 // }
 
-static void inline _univ_update_pair(univ *self, size_t i, size_t j, __m256d g)
+static struct __m256d_3d inline _univ_update_pair(
+    univ *self, size_t i, size_t j,
+    __m256d rxi, __m256d ryi, __m256d rzi,
+    __m256d axi, __m256d ayi, __m256d azi,
+    __m256d mi, __m256d g
+)
 {
 
-    // printf("\n");
-
-    size_t diff = j - i;
-    if (diff > VLEN) {
-        diff = VLEN;
+    size_t j_diff = j - i;
+    if (j_diff > VLEN) {
+        j_diff = VLEN;
     }
 
-    // printf(" i == %ld | j == %ld | diff == %ld \n", i, j, diff);
+    // printf("\n");
+    // printf(" i == %ld | j == %ld | j_diff == %ld \n", i, j, j_diff);
 
-    __m256d xi = _load_256d(diff, i, self->rx);
-    __m256d yi = _load_256d(diff, i, self->ry);
-    __m256d zi = _load_256d(diff, i, self->rz);
-    __m256d mi = _load_256d(diff, i, self->m);
-
-    __m256d xj = _mm256_set1_pd(self->rx[j]);
-    __m256d yj = _mm256_set1_pd(self->ry[j]);
-    __m256d zj = _mm256_set1_pd(self->rz[j]);
+    __m256d rxj = _mm256_set1_pd(self->rx[j]);
+    __m256d ryj = _mm256_set1_pd(self->ry[j]);
+    __m256d rzj = _mm256_set1_pd(self->rz[j]);
     __m256d mj = _mm256_set1_pd(self->m[j]);
 
     // printf(" data \n");
-    // _print_256d(xi);
-    // _print_256d(yi);
-    // _print_256d(zi);
-    // _print_256d(xj);
-    // _print_256d(yj);
-    // _print_256d(zj);
+    // _print_256d(rxi);
+    // _print_256d(ryi);
+    // _print_256d(rzi);
+    // _print_256d(rxj);
+    // _print_256d(ryj);
+    // _print_256d(rzj);
 
-    __m256d dx = _mm256_sub_pd(xi, xj);
-    __m256d dy = _mm256_sub_pd(yi, yj);
-    __m256d dz = _mm256_sub_pd(zi, zj);
+    __m256d dx = _mm256_sub_pd(rxi, rxj);
+    __m256d dy = _mm256_sub_pd(ryi, ryj);
+    __m256d dz = _mm256_sub_pd(rzi, rzj);
 
     // printf(" diff \n");
     // _print_256d(dx);
@@ -227,27 +249,28 @@ static void inline _univ_update_pair(univ *self, size_t i, size_t j, __m256d g)
 
     // printf(" aj[v]: %e, %e, %e \n", self->ax[j], self->ay[j], self->az[j]);
 
-    self->ax[j] += _sum_256d(_mm256_mul_pd(aj, dx), diff);
-    self->ay[j] += _sum_256d(_mm256_mul_pd(aj, dy), diff);
-    self->az[j] += _sum_256d(_mm256_mul_pd(aj, dz), diff);
+    self->ax[j] += _sum_256d(_mm256_mul_pd(aj, dx), j_diff);
+    self->ay[j] += _sum_256d(_mm256_mul_pd(aj, dy), j_diff);
+    self->az[j] += _sum_256d(_mm256_mul_pd(aj, dz), j_diff);
 
     // printf(" aj[n]: %e, %e, %e \n", self->ax[j], self->ay[j], self->az[j]);
     // assert_nan(self->ax[j], self->ay[j], self->az[j]);
 
-    dx = _mm256_mul_pd(ai, dx);
-    dy = _mm256_mul_pd(ai, dy);
-    dz = _mm256_mul_pd(ai, dz);
+    // printf(" ai state (1) \n");
+    // _print_256d(axi);
+    // _print_256d(ayi);
+    // _print_256d(azi);
 
-    size_t l;
-    for (size_t k = 0; k < diff; k++) {
-        l = i + k;
-        // printf(" ai[v]: %e, %e, %e (%ld, %ld) \n", self->ax[l], self->ay[l], self->az[l], i, k);
-        self->ax[l] -= dx[k];
-        self->ay[l] -= dy[k];
-        self->az[l] -= dz[k];
-        // printf(" ai[n]: %e, %e, %e (%ld, %ld) \n", self->ax[l], self->ay[l], self->az[l], i, k);
-        // assert_nan(self->ax[l], self->ay[l], self->az[l]);
-    }
+    axi = _mm256_add_pd(axi, _mask_256d(_mm256_mul_pd(ai, dx), j_diff));
+    ayi = _mm256_add_pd(ayi, _mask_256d(_mm256_mul_pd(ai, dy), j_diff));
+    azi = _mm256_add_pd(azi, _mask_256d(_mm256_mul_pd(ai, dz), j_diff));
+
+    // printf(" ai state (2) \n");
+    // _print_256d(axi);
+    // _print_256d(ayi);
+    // _print_256d(azi);
+
+    return (struct __m256d_3d){axi, ayi, azi};
 
 }
 
@@ -260,17 +283,52 @@ void univ_step_stage1(univ *self)
     memset(self->ay, 0, n_mem);
     memset(self->az, 0, n_mem);
 
+    size_t i, j, n_diff;
+
+    __m256d rxi, ryi, rzi;
+    __m256d axi, ayi, azi;
+    __m256d mi;
+
     __m256d g = _mm256_set1_pd(self->g);
 
-    // printf(" n == %ld \n", self->n);
+    struct __m256d_3d ai;
 
-    for(size_t j = 1; j < self->n; j++){
+    for(i = 0; i < self->n - 1; i += VLEN){
 
-        for(size_t i = 0; i < j; i += VLEN){
+        n_diff = self->n - i;  // TODO ???
+        if (n_diff > VLEN) {
+            n_diff = VLEN;
+        }
 
-            _univ_update_pair(self, i, j, g);
+        rxi = _load_256d(n_diff, i, self->rx);
+        ryi = _load_256d(n_diff, i, self->ry);
+        rzi = _load_256d(n_diff, i, self->rz);
+        mi = _load_256d(n_diff, i, self->m);
+
+        axi = _mm256_set1_pd(0.0);
+        ayi = _mm256_set1_pd(0.0);
+        azi = _mm256_set1_pd(0.0);
+
+        for(j = i + 1; j < self->n; j++){
+
+            ai = _univ_update_pair(
+                self, i, j,
+                rxi, ryi, rzi,
+                axi, ayi, azi,
+                mi, g
+            );
+
+            axi = ai.x;
+            ayi = ai.y;
+            azi = ai.z;
 
         }
+
+        _sub_256d(
+            axi, ayi, azi,
+            i, n_diff,
+            self->ax, self->ay, self->az
+        );
 
     }
 
