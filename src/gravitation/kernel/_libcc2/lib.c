@@ -151,18 +151,6 @@ static void inline _sub_256d(
 
 }
 
-static void inline _print_256d(__m256d d){
-    printf(" AVX: %e, %e, %e, %e \n", d[0], d[1], d[2], d[3]);
-}
-static void inline _print_a4(CDTYPE *d, size_t i){
-    printf(" MEM: %e, %e, %e, %e \n", d[i], d[i+1], d[i+2], d[i+3]);
-}
-// static void assert_nan(CDTYPE x, CDTYPE y, CDTYPE z) {
-//     if (isnan(x) || isnan(y) || isnan(z)) {
-//         exit(1);
-//     }
-// }
-
 static struct __m256d_3d inline _univ_update_pair(
     univ *self, size_t i, size_t j,
     __m256d rxi, __m256d ryi, __m256d rzi,
@@ -176,99 +164,39 @@ static struct __m256d_3d inline _univ_update_pair(
         j_diff = VLEN;
     }
 
-    // printf("\n");
-    // printf(" i == %ld | j == %ld | j_diff == %ld \n", i, j, j_diff);
-
     __m256d rxj = _mm256_set1_pd(self->rx[j]);
     __m256d ryj = _mm256_set1_pd(self->ry[j]);
     __m256d rzj = _mm256_set1_pd(self->rz[j]);
     __m256d mj = _mm256_set1_pd(self->m[j]);
 
-    // printf(" data \n");
-    // _print_256d(rxi);
-    // _print_256d(ryi);
-    // _print_256d(rzi);
-    // _print_256d(rxj);
-    // _print_256d(ryj);
-    // _print_256d(rzj);
-
     __m256d dx = _mm256_sub_pd(rxi, rxj);
     __m256d dy = _mm256_sub_pd(ryi, ryj);
     __m256d dz = _mm256_sub_pd(rzi, rzj);
-
-    // printf(" diff \n");
-    // _print_256d(dx);
-    // _print_256d(dy);
-    // _print_256d(dz);
 
     __m256d dxx = _mm256_mul_pd(dx,  dx);
     __m256d dyy = _mm256_mul_pd(dy,  dy);
     __m256d dzz = _mm256_mul_pd(dz,  dz);
 
-    // printf("TT %ld \n", i);
-    // _print_256d(g);
-
-    // printf(" diff^2 \n");
-    // _print_256d(dxx);
-    // _print_256d(dyy);
-    // _print_256d(dzz);
-
     __m256d dxyz = _mm256_add_pd(_mm256_add_pd(dxx, dyy), dzz);
 
-    // printf(" dxyz \n");
-    // _print_256d(dxyz);
-
     __m256d dxyzg = _mm256_div_pd(g, dxyz);
-
-    // printf(" dxyzg \n");
-    // _print_256d(dxyzg);
 
     __m256d aj = _mm256_mul_pd(dxyzg, mi);
     __m256d ai = _mm256_mul_pd(dxyzg, mj);
 
-    // printf(" ai \n");
-    // _print_256d(ai);
-    // printf(" aj \n");
-    // _print_256d(aj);
-
-    // printf(" dxyz \n");
-    // _print_256d(dxyz);
-
     dxyz = _mm256_div_pd(_mm256_set1_pd(1.0), _mm256_sqrt_pd(dxyz));
-
-    // printf(" rsqrt(dxyz) \n");
-    // _print_256d(dxyz);
 
     dx = _mm256_mul_pd(dxyz, dx);
     dy = _mm256_mul_pd(dxyz, dy);
     dz = _mm256_mul_pd(dxyz, dz);
 
-    // _print_256d(dx);
-    // _print_256d(dy);
-    // _print_256d(dz);
-
-    // printf(" aj[v]: %e, %e, %e \n", self->ax[j], self->ay[j], self->az[j]);
-
     self->ax[j] += _sum_256d(_mm256_mul_pd(aj, dx), j_diff);
     self->ay[j] += _sum_256d(_mm256_mul_pd(aj, dy), j_diff);
     self->az[j] += _sum_256d(_mm256_mul_pd(aj, dz), j_diff);
 
-    // printf(" aj[n]: %e, %e, %e \n", self->ax[j], self->ay[j], self->az[j]);
-    // assert_nan(self->ax[j], self->ay[j], self->az[j]);
-
-    // printf(" ai state (1) \n");
-    // _print_256d(axi);
-    // _print_256d(ayi);
-    // _print_256d(azi);
-
     axi = _mm256_add_pd(axi, _mask_256d(_mm256_mul_pd(ai, dx), j_diff));
     ayi = _mm256_add_pd(ayi, _mask_256d(_mm256_mul_pd(ai, dy), j_diff));
     azi = _mm256_add_pd(azi, _mask_256d(_mm256_mul_pd(ai, dz), j_diff));
-
-    // printf(" ai state (2) \n");
-    // _print_256d(axi);
-    // _print_256d(ayi);
-    // _print_256d(azi);
 
     return (struct __m256d_3d){axi, ayi, azi};
 
@@ -295,7 +223,7 @@ void univ_step_stage1(univ *self)
 
     for(i = 0; i < self->n - 1; i += VLEN){
 
-        n_diff = self->n - i;  // TODO ???
+        n_diff = self->n - i;
         if (n_diff > VLEN) {
             n_diff = VLEN;
         }
