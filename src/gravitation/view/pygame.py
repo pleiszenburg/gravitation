@@ -52,7 +52,7 @@ class Viewer:
         self,
         kernel: str,
         threads: int,
-        len: int,
+        len_: int,
         steps_per_frame: Optional[int] = None,
         max_iterations: Optional[int] = None,
     ):
@@ -63,7 +63,7 @@ class Viewer:
             inventory[kernel]
             .get_class()
             .from_galaxy(
-                stars_len=len,
+                stars_len=len_,
                 threads=threads,
             )
         )
