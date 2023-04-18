@@ -324,10 +324,15 @@ class UniverseBase(ABC):
         runs stage 3 (increments simulation time) of one simulation (time-) step, assert nan
         """
 
+        self._t += self._T
+
+    def assert_not_isnan(self):
+        """
+        check for NaN
+        """
+
         for mass in self._masses:
             mass.assert_not_isnan()
-
-        self._t += self._T
 
     def stop(self):
         """

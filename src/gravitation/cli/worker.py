@@ -311,6 +311,7 @@ class _Worker:
 
         try:
             self._universe.step(stage1=False)
+            self._universe.assert_not_isnan()
         except Exception:
             self._msg(log="ERROR", msg=traceback.format_exc())
             self._msg(log="EXIT", msg="BAD")
