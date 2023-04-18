@@ -30,6 +30,7 @@ specific language governing rights and limitations under the License.
 
 import json
 
+import numpy as np
 from plotly.offline import plot as _plot
 import plotly.graph_objs as go
 
@@ -77,12 +78,28 @@ def plot(logfile, html_out):
         ] = min(item["runtime"])
 
     traces = []
+    xc = set()
+    yc = set()
     for kernel_name, kernel_results in sorted(runtimes.items(), key=lambda x: x[0]):
         x, y = [], []
         for size, runtime in sorted(kernel_results.items(), key=lambda x: x[0]):
             x.append(size)
             y.append(runtime / 1e9)
         traces.append(go.Scatter(x=x, y=y, name=kernel_name, mode="lines+markers"))
+        xc.update(set(x))
+        yc.update(set(y))
+
+    x = np.array(sorted(xc), dtype = 'f8')
+    x0 = x[0]
+    y0 = min(yc)
+    for idx in range(2, 4):
+        traces.append(go.Scatter(
+            x=x,
+            y=(y0 / (x0 ** idx)) * (x ** idx),
+            name=f'x^{idx:d}',
+            mode="lines",
+            line_color='rgba(200,200,200,128)',
+        ))
 
     layout = go.Layout(
         autosize=True,
