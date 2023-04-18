@@ -91,7 +91,7 @@ def _get_backends() -> list[str]:
 )
 @click.option(
     "--backend",
-    default=_get_backends()[0],
+    default=_get_backends()[-1],
     type=click.Choice(_get_backends()),
     show_default=True,
     help="plot backend",
