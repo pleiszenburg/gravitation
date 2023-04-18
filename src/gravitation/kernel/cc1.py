@@ -86,14 +86,15 @@ class Universe(UniverseBase):
         lib = ctypes.cdll.LoadLibrary(
             os.path.join(os.path.dirname(__file__), self._LIB, f"lib.{sysconfig.get_config_var('SOABI')}.so")
         )
+        suffix = dict(float32 = 'f4', float64 = 'f8')[self._dtype]
 
-        univ_alloc = lib.univ_alloc
+        univ_alloc = getattr(lib, f'univ_alloc_{suffix:s}')
         univ_alloc.argtypes = (ctypes.POINTER(Univ),)
 
-        self._free_c = lib.univ_free
+        self._free_c = getattr(lib, f'univ_free_{suffix:s}')
         self._free_c.argtypes = (ctypes.POINTER(Univ),)
 
-        self._step_stage1_c = lib.univ_step_stage1
+        self._step_stage1_c = getattr(lib, f'univ_step_stage1_{suffix:s}')
         self._step_stage1_c.argtypes = (ctypes.POINTER(Univ),)
 
         self._univ = Univ()
