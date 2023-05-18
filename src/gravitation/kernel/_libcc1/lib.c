@@ -46,31 +46,47 @@ typedef struct mass_f8 {
 
 } mass_f8;
 
-void univ_alloc_f4(mass_f4 **masses, size_t n)
+typedef struct univ_f4 {
+
+    mass_f4 *masses;
+    size_t n;
+    float g;
+
+} univ_f4;
+
+typedef struct univ_f8 {
+
+    mass_f8 *masses;
+    size_t n;
+    double g;
+
+} univ_f8;
+
+void univ_alloc_f4(univ_f4 *self)
 {
 
-    *masses = (mass_f4*)aligned_alloc(32, n * sizeof(mass_f4));
+    self->masses = (mass_f4*)aligned_alloc(32, self->n * sizeof(mass_f4));
 
 }
 
-void univ_alloc_f8(mass_f8 **masses, size_t n)
+void univ_alloc_f8(univ_f8 *self)
 {
 
-    *masses = (mass_f8*)aligned_alloc(32, n * sizeof(mass_f8));
+    self->masses = (mass_f8*)aligned_alloc(32, self->n * sizeof(mass_f8));
 
 }
 
-void univ_free_f4(mass_f4 **masses)
+void univ_free_f4(univ_f4 *self)
 {
 
-    free(*masses);
+    free(self->masses);
 
 }
 
-void univ_free_f8(mass_f8 **masses)
+void univ_free_f8(univ_f8 *self)
 {
 
-    free(*masses);
+    free(self->masses);
 
 }
 
@@ -142,35 +158,35 @@ static void inline _univ_update_pair_f8(mass_f8 *pm1, mass_f8 *pm2, double g)
 
 }
 
-void univ_step_stage1_f4(mass_f4 *masses, float g, size_t n)
+void univ_step_stage1_f4(univ_f4 *self)
 {
 
-    for(size_t i = 0; i < n; i++) {
-        masses[i].ax = (float)0.0;
-        masses[i].ay = (float)0.0;
-        masses[i].az = (float)0.0;
+    for(size_t i = 0; i < self->n; i++) {
+        self->masses[i].ax = (float)0.0;
+        self->masses[i].ay = (float)0.0;
+        self->masses[i].az = (float)0.0;
     }
 
-    for(size_t i = 0; i < n - 1; i++){
-        for(size_t j = i + 1; j < n; j++){
-            _univ_update_pair_f4(&masses[i], &masses[j], g);
+    for(size_t i = 0; i < self->n - 1; i++){
+        for(size_t j = i + 1; j < self->n; j++){
+            _univ_update_pair_f4(&self->masses[i], &self->masses[j], self->g);
         }
     }
 
 }
 
-void univ_step_stage1_f8(mass_f8 *masses, double g, size_t n)
+void univ_step_stage1_f8(univ_f8 *self)
 {
 
-    for(size_t i = 0; i < n; i++) {
-        masses[i].ax = (double)0.0;
-        masses[i].ay = (double)0.0;
-        masses[i].az = (double)0.0;
+    for(size_t i = 0; i < self->n; i++) {
+        self->masses[i].ax = (float)0.0;
+        self->masses[i].ay = (float)0.0;
+        self->masses[i].az = (float)0.0;
     }
 
-    for(size_t i = 0; i < n - 1; i++){
-        for(size_t j = i + 1; j < n; j++){
-            _univ_update_pair_f8(&masses[i], &masses[j], g);
+    for(size_t i = 0; i < self->n - 1; i++){
+        for(size_t j = i + 1; j < self->n; j++){
+            _univ_update_pair_f8(&self->masses[i], &self->masses[j], self->g);
         }
     }
 
