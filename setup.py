@@ -64,6 +64,24 @@ ext_modules = cythonize(
     annotate=True,
 ) + [
     Extension(
+        "gravitation.kernel._libcc1.lib",
+        [os.path.join(SRC_DIR, "gravitation", "kernel", "_libcc1", "lib.c")],
+        extra_compile_args=[
+            "-std=gnu11",
+            "-fPIC",
+            "-O3",
+            # "-ffast-math",
+            "-march=native",
+            "-mtune=native",
+            "-mfpmath=sse",
+            "-Wall",
+            "-Wdouble-promotion",
+            "-Winline",
+            "-Werror",
+        ],
+        extra_link_args=["-lm"],
+    ),
+    Extension(
         "gravitation.kernel._libcc2.lib",
         [os.path.join(SRC_DIR, "gravitation", "kernel", "_libcc2", "lib.c")],
         extra_compile_args=[
