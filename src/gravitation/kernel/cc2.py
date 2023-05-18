@@ -62,24 +62,23 @@ class Universe(UniverseBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._cdtype = None
         self._step_stage1_c = None
-        self._free_c = None
-        self._univ = None
+        self._univ_free_c = None
+        self._univ_c = None
 
     def start_kernel(self):
-        self._cdtype = getattr(
+        cdtype = getattr(
             ctypes,
             f"c_{dict(float32 = 'float', float64 = 'double')[self._dtype]:s}",
         )
         array_fields = ["rx", "ry", "rz", "ax", "ay", "az", "m"]
-        array_type = self._cdtype * len(self)
+        array_type = cdtype * len(self)
 
         class Univ(ctypes.Structure):
             _fields_ = [
                 (field, ctypes.POINTER(array_type)) for field in array_fields
             ] + [
-                ("g", self._cdtype),
+                ("g", cdtype),
                 ("n", ctypes.c_size_t),
             ]
 
@@ -88,40 +87,41 @@ class Universe(UniverseBase):
         )
         suffix = dict(float32 = 'f4', float64 = 'f8')[self._dtype]
 
-        univ_alloc = getattr(lib, f'univ_alloc_{suffix:s}')
-        univ_alloc.argtypes = (ctypes.POINTER(Univ),)
+        univ_alloc_c = getattr(lib, f'univ_alloc_{suffix:s}')
+        univ_alloc_c.argtypes = (ctypes.POINTER(Univ),)
 
-        self._free_c = getattr(lib, f'univ_free_{suffix:s}')
-        self._free_c.argtypes = (ctypes.POINTER(Univ),)
+        self._univ_free_c = getattr(lib, f'univ_free_{suffix:s}')
+        self._univ_free_c.argtypes = (ctypes.POINTER(Univ),)
 
         self._step_stage1_c = getattr(lib, f'univ_step_stage1_{suffix:s}')
         self._step_stage1_c.argtypes = (ctypes.POINTER(Univ),)
 
-        self._univ = Univ()
-        self._univ.g = self._G
-        self._univ.n = len(self)
-        univ_alloc(self._univ)
+        self._univ_c = Univ()
+        self._univ_c.g = self._G
+        self._univ_c.n = len(self)
+        univ_alloc_c(self._univ_c)
+
         for idx, pm in enumerate(self._masses):
-            self._univ.m.contents[idx] = pm.m
+            self._univ_c.m.contents[idx] = pm.m
 
     def stop_kernel(self):
-        self._free_c(self._univ)
+        self._univ_free_c(self._univ_c)
 
     def push_stage1(self):
         for idx, pm in enumerate(self._masses):
             (
-                self._univ.rx.contents[idx],
-                self._univ.ry.contents[idx],
-                self._univ.rz.contents[idx],
+                self._univ_c.rx.contents[idx],
+                self._univ_c.ry.contents[idx],
+                self._univ_c.rz.contents[idx],
             ) = pm.r
 
     def step_stage1(self):
-        self._step_stage1_c(ctypes.pointer(self._univ))
+        self._step_stage1_c(ctypes.pointer(self._univ_c))
 
     def pull_stage1(self):
         for idx, pm in enumerate(self._masses):
             pm.a[:] = [
-                self._univ.ax.contents[idx],
-                self._univ.ay.contents[idx],
-                self._univ.az.contents[idx],
+                self._univ_c.ax.contents[idx],
+                self._univ_c.ay.contents[idx],
+                self._univ_c.az.contents[idx],
             ]
