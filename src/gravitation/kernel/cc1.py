@@ -62,14 +62,13 @@ class Universe(UniverseBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._cdtype = None
         self._step_stage1_c = None
         self._univ_free_c = None
         self._univ_c = None
         self._masses_c = None
 
     def start_kernel(self):
-        self._cdtype = getattr(
+        cdtype = getattr(
             ctypes,
             f"c_{dict(float32 = 'float', float64 = 'double')[self._dtype]:s}",
         )
@@ -77,14 +76,14 @@ class Universe(UniverseBase):
 
         class Mass(ctypes.Structure):
             _fields_ = [
-                (field, self._cdtype) for field in fields
+                (field, cdtype) for field in fields
             ]
 
         class Univ(ctypes.Structure):
             _fields_ = [
                 ('masses', ctypes.POINTER(Mass)),
                 ('n', ctypes.c_size_t),
-                ('g', self._cdtype),
+                ('g', cdtype),
             ]
 
         lib = ctypes.cdll.LoadLibrary(
