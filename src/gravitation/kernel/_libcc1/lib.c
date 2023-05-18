@@ -36,10 +36,6 @@ typedef struct mass_f4 {
     float ax, ay, az;
     float m;
 
-    float g;
-
-    size_t n;
-
 } mass_f4;
 
 typedef struct mass_f8 {
@@ -47,10 +43,6 @@ typedef struct mass_f8 {
     double rx, ry, rz;
     double ax, ay, az;
     double m;
-
-    double g;
-
-    size_t n;
 
 } mass_f8;
 
