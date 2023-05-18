@@ -30,108 +30,64 @@ specific language governing rights and limitations under the License.
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct univ_f4 {
+typedef struct mass_f4 {
 
-    float *rx, *ry, *rz;
-    float *ax, *ay, *az;
-    float *m;
+    float rx, ry, rz;
+    float ax, ay, az;
+    float m;
 
     float g;
 
     size_t n;
 
-} univ_f4;
+} mass_f4;
 
-typedef struct univ_f8 {
+typedef struct mass_f8 {
 
-    double *rx, *ry, *rz;
-    double *ax, *ay, *az;
-    double *m;
+    double rx, ry, rz;
+    double ax, ay, az;
+    double m;
 
     double g;
 
     size_t n;
 
-} univ_f8;
+} mass_f8;
 
-static float inline *_aligned_alloc_f4(size_t n) {
-
-    return (float*)aligned_alloc(32, n * sizeof(float));
-
-}
-
-static double inline *_aligned_alloc_f8(size_t n) {
-
-    return (double*)aligned_alloc(32, n * sizeof(double));
-
-}
-
-void univ_alloc_f4(univ_f4 *self)
+void univ_alloc_f4(mass_f4 **masses, size_t n)
 {
 
-    self->rx = _aligned_alloc_f4(self->n);
-    self->ry = _aligned_alloc_f4(self->n);
-    self->rz = _aligned_alloc_f4(self->n);
-
-    self->ax = _aligned_alloc_f4(self->n);
-    self->ay = _aligned_alloc_f4(self->n);
-    self->az = _aligned_alloc_f4(self->n);
-
-    self->m = _aligned_alloc_f4(self->n);
+    *masses = (mass_f4*)aligned_alloc(32, n * sizeof(mass_f4));
 
 }
 
-void univ_alloc_f8(univ_f8 *self)
+void univ_alloc_f8(mass_f8 **masses, size_t n)
 {
 
-    self->rx = _aligned_alloc_f8(self->n);
-    self->ry = _aligned_alloc_f8(self->n);
-    self->rz = _aligned_alloc_f8(self->n);
-
-    self->ax = _aligned_alloc_f8(self->n);
-    self->ay = _aligned_alloc_f8(self->n);
-    self->az = _aligned_alloc_f8(self->n);
-
-    self->m = _aligned_alloc_f8(self->n);
+    *masses = (mass_f8*)aligned_alloc(32, n * sizeof(mass_f8));
 
 }
 
-void univ_free_f4(univ_f4 *self)
+void univ_free_f4(mass_f4 **masses)
 {
 
-    free(self->rx);
-    free(self->ry);
-    free(self->rz);
-
-    free(self->ax);
-    free(self->ay);
-    free(self->az);
-
-    free(self->m);
+    free(*masses);
 
 }
 
-void univ_free_f8(univ_f8 *self)
+void univ_free_f8(mass_f8 **masses)
 {
 
-    free(self->rx);
-    free(self->ry);
-    free(self->rz);
-
-    free(self->ax);
-    free(self->ay);
-    free(self->az);
-
-    free(self->m);
+    free(*masses);
 
 }
 
-static void inline _univ_update_pair_f4(univ_f4 *self, size_t i, size_t j)
+static void inline _univ_update_pair_f4(mass_f4 *pm1, mass_f4 *pm2, float g)
 {
 
-    float dx = self->rx[i] - self->rx[j];
-    float dy = self->ry[i] - self->ry[j];
-    float dz = self->rz[i] - self->rz[j];
+    float dx = pm1->rx - pm2->rx;
+    float dy = pm1->ry - pm2->ry;
+    float dz = pm1->rz - pm2->rz;
 
     float dxx = dx * dx;
     float dyy = dy * dy;
@@ -139,10 +95,10 @@ static void inline _univ_update_pair_f4(univ_f4 *self, size_t i, size_t j)
 
     float dxyz = dxx + dyy + dzz;
 
-    float dxyzg = self->g / dxyz;
+    float dxyzg = g / dxyz;
 
-    float aj = dxyzg * self->m[i];
-    float ai = dxyzg * self->m[j];
+    float aj = dxyzg * pm1->m;
+    float ai = dxyzg * pm2->m;
 
     dxyz = (float)1.0 / (float)sqrt(dxyz);
 
@@ -150,22 +106,22 @@ static void inline _univ_update_pair_f4(univ_f4 *self, size_t i, size_t j)
     dy *= dxyz;
     dz *= dxyz;
 
-    self->ax[j] += aj * dx;
-    self->ay[j] += aj * dy;
-    self->az[j] += aj * dz;
+    pm2->ax += aj * dx;
+    pm2->ay += aj * dy;
+    pm2->az += aj * dz;
 
-    self->ax[i] -= ai * dx;
-    self->ay[i] -= ai * dy;
-    self->az[i] -= ai * dz;
+    pm1->ax -= ai * dx;
+    pm1->ay -= ai * dy;
+    pm1->az -= ai * dz;
 
 }
 
-static void inline _univ_update_pair_f8(univ_f8 *self, size_t i, size_t j)
+static void inline _univ_update_pair_f8(mass_f8 *pm1, mass_f8 *pm2, double g)
 {
 
-    double dx = self->rx[i] - self->rx[j];
-    double dy = self->ry[i] - self->ry[j];
-    double dz = self->rz[i] - self->rz[j];
+    double dx = pm1->rx - pm2->rx;
+    double dy = pm1->ry - pm2->ry;
+    double dz = pm1->rz - pm2->rz;
 
     double dxx = dx * dx;
     double dyy = dy * dy;
@@ -173,10 +129,10 @@ static void inline _univ_update_pair_f8(univ_f8 *self, size_t i, size_t j)
 
     double dxyz = dxx + dyy + dzz;
 
-    double dxyzg = self->g / dxyz;
+    double dxyzg = g / dxyz;
 
-    double aj = dxyzg * self->m[i];
-    double ai = dxyzg * self->m[j];
+    double aj = dxyzg * pm1->m;
+    double ai = dxyzg * pm2->m;
 
     dxyz = (double)1.0 / (double)sqrt(dxyz);
 
@@ -184,45 +140,45 @@ static void inline _univ_update_pair_f8(univ_f8 *self, size_t i, size_t j)
     dy *= dxyz;
     dz *= dxyz;
 
-    self->ax[j] += aj * dx;
-    self->ay[j] += aj * dy;
-    self->az[j] += aj * dz;
+    pm2->ax += aj * dx;
+    pm2->ay += aj * dy;
+    pm2->az += aj * dz;
 
-    self->ax[i] -= ai * dx;
-    self->ay[i] -= ai * dy;
-    self->az[i] -= ai * dz;
+    pm1->ax -= ai * dx;
+    pm1->ay -= ai * dy;
+    pm1->az -= ai * dz;
 
 }
 
-void univ_step_stage1_f4(univ_f4 *self)
+void univ_step_stage1_f4(mass_f4 *masses, float g, size_t n)
 {
 
-    size_t n_mem = sizeof(float)*self->n;
+    for(size_t i = 0; i < n; i++) {
+        masses[i].ax = (float)0.0;
+        masses[i].ay = (float)0.0;
+        masses[i].az = (float)0.0;
+    }
 
-    memset(self->ax, 0, n_mem);
-    memset(self->ay, 0, n_mem);
-    memset(self->az, 0, n_mem);
-
-    for(size_t i = 0; i < self->n - 1; i++){
-        for(size_t j = i + 1; j < self->n; j++){
-            _univ_update_pair_f4(self, i, j);
+    for(size_t i = 0; i < n - 1; i++){
+        for(size_t j = i + 1; j < n; j++){
+            _univ_update_pair_f4(&masses[i], &masses[j], g);
         }
     }
 
 }
 
-void univ_step_stage1_f8(univ_f8 *self)
+void univ_step_stage1_f8(mass_f8 *masses, double g, size_t n)
 {
 
-    size_t n_mem = sizeof(double)*self->n;
+    for(size_t i = 0; i < n; i++) {
+        masses[i].ax = (double)0.0;
+        masses[i].ay = (double)0.0;
+        masses[i].az = (double)0.0;
+    }
 
-    memset(self->ax, 0, n_mem);
-    memset(self->ay, 0, n_mem);
-    memset(self->az, 0, n_mem);
-
-    for(size_t i = 0; i < self->n - 1; i++){
-        for(size_t j = i + 1; j < self->n; j++){
-            _univ_update_pair_f8(self, i, j);
+    for(size_t i = 0; i < n - 1; i++){
+        for(size_t j = i + 1; j < n; j++){
+            _univ_update_pair_f8(&masses[i], &masses[j], g);
         }
     }
 
