@@ -89,7 +89,7 @@ class Universe(UniverseBase):
         univ_alloc.argtypes = (ctypes.POINTER(ctypes.POINTER(Mass)), ctypes.c_size_t)
 
         self._univ_free = getattr(lib, f'univ_free_{suffix:s}')
-        self._univ_free.argtypes = (ctypes.POINTER(ctypes.POINTER(Mass)), ctypes.c_size_t)
+        self._univ_free.argtypes = (ctypes.POINTER(ctypes.POINTER(Mass)),)
 
         self._step_stage1_c = getattr(lib, f'univ_step_stage1_{suffix:s}')
         self._step_stage1_c.argtypes = (ctypes.POINTER(Mass), self._cdtype, ctypes.c_size_t)
