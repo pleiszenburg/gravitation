@@ -18,3 +18,4 @@ pip-wheel-metadata/
 *.h5
 .backup/
 .vscode/
+job.sh
