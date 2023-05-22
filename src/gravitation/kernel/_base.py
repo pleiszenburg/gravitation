@@ -353,6 +353,11 @@ class UniverseBase(ABC):
         REIMPLEMENT IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!
         """
 
+    def gc_collect(self):
+        """
+        REIMPLEMENT FOR GARBAGE COLLECTION OUTSIDE OF THE PYTHON INTERPRETER'S CONTEXT
+        """
+
     def to_hdf5(self, fn: str, gn: str):
         """
         stores simulation state into HDF5 file
