@@ -28,6 +28,7 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import atexit
 import sys
 from typing import List, Optional, Tuple
 
@@ -68,6 +69,7 @@ class Viewer:
             )
         )
         self._universe.start()
+        atexit.register(self._universe.stop)
         self._timer_sps = AverageTimer(self._universe.meta["average_over_steps"])
         self._timer_fps = AverageTimer(self._universe.meta["average_over_steps"])
         self._init_canvas(

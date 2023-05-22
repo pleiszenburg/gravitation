@@ -28,6 +28,7 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import atexit
 from typing import Optional
 
 from ..lib.debug import typechecked
@@ -70,6 +71,7 @@ class Viewer:
             )
         )
         self._universe.start()
+        atexit.register(self._universe.stop)
 
         _ = self._universe.meta["steps_per_frame"] if steps_per_frame is None else steps_per_frame  # TODO
 
