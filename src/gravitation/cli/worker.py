@@ -242,9 +242,7 @@ class _Worker:
                     )
                 )
         except Exception:
-            self._msg(log="ERROR", msg=traceback.format_exc())
-            self._msg(log="EXIT", msg="BAD")
-            sys.exit()
+            self._exit(ok = False)
 
         self._msg(log="PROCEDURE", msg="Simulation created.")
         self._msg(log="SIZE", value=len(universe))
@@ -298,6 +296,7 @@ class _Worker:
         try:
             self._universe.push_stage1()
             gc.collect()
+            self._universe.gc_collect()
             self._rt.start()
             self._universe.step_stage1()
             rt_ = self._rt.stop()
@@ -305,17 +304,13 @@ class _Worker:
             gc.collect()
             gt_ = self._gt.stop()
         except Exception:
-            self._msg(log="ERROR", msg=traceback.format_exc())
-            self._msg(log="EXIT", msg="BAD")
-            sys.exit()
+            self._exit(ok = False)
 
         try:
             self._universe.step(stage1=False)
             self._universe.assert_not_isnan()
         except Exception:
-            self._msg(log="ERROR", msg=traceback.format_exc())
-            self._msg(log="EXIT", msg="BAD")
-            sys.exit()
+            self._exit(ok = False)
 
         self._counter += 1
         if self._counter in self._save_after_iteration:
@@ -337,11 +332,17 @@ class _Worker:
                 ),
             )
         except Exception:
-            self._msg(log="ERROR", msg=traceback.format_exc())
-            self._msg(log="EXIT", msg="BAD")
-            sys.exit()
+            self._exit(ok = False)
 
         self._msg(log="PROCEDURE", msg=f"Data saved after step {self._counter:d}.")
+
+    def _exit(self, ok: bool = True):
+        if hasattr(self, "_universe"):
+            self._universe.stop()
+        if not ok:
+            self._msg(log="ERROR", msg=traceback.format_exc())
+        self._msg(log="EXIT", msg="OK" if ok else "BAD")
+        sys.exit(int(not ok))
 
     def run(self):
         "run worker"
@@ -363,8 +364,8 @@ class _Worker:
         et_ = self._et()
         if et_ >= self._min_total_runtime:
             self._msg(log="PROCEDURE", msg="Minimum steps sufficient.")
-            self._msg(log="EXIT", msg="OK")
-            sys.exit()
+            self._exit()
+            return
 
         self._msg(log="PROCEDURE", msg="Extra steps required.")
         time_remaining = self._min_total_runtime - et_
@@ -374,10 +375,8 @@ class _Worker:
         for _ in range(iterations_remaining):
             self._step()
 
-        self._universe.stop()
-
-        self._msg(log="EXIT", msg="OK")
-        sys.exit()
+        self._msg(log="PROCEDURE", msg="Extra steps finished.")
+        self._exit()
 
 @typechecked
 def worker_command(
