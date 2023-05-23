@@ -42,7 +42,7 @@ import numpy as np
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-class Worker(ABC):
+class WorkerBase(ABC):
     "Base class for worker with shared memory support"
 
     def __init__(self, idx: int, port: int, authkey: bytes, in_queue: Queue, out_queue: Queue):
@@ -92,7 +92,7 @@ class Node:
     "Representing a worker in the main process"
 
     def __init__(self, idx: int, port: int, authkey: bytes, worker: type, **kwargs):
-        if not issubclass(worker, Worker):
+        if not issubclass(worker, WorkerBase):
             raise TypeError('argument "worker" must be a subclass of Worker')
         self._idx = idx
         self._in_queue = Queue()
@@ -173,7 +173,7 @@ class Param:
 class ShmPool:
     "Minimal process pool with integrated shared memory support"
 
-    def __init__(self, nodes: int = 1, worker: type = Worker, **kwargs):
+    def __init__(self, nodes: int = 1, worker: type = WorkerBase, **kwargs):
         assert nodes > 0
         port = self.get_free_port()
         authkey = f'{randint(2**50, 2**60):x}'.encode('utf-8')

@@ -50,14 +50,14 @@ import numpy as np
 
 from ._base import UniverseBase, DIMS
 from ._block import Block
-from ._shm import Param, ShmPool, Worker
+from ._shm import Param, ShmPool, WorkerBase
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-class UniverseWorker(Worker):
+class UniverseWorker(WorkerBase):
     "Runs in process"
 
     def __init__(self, *args, length: int = 0, dtype: str = '', G: float = 0.0, **kwargs):
