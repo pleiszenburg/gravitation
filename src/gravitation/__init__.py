@@ -31,3 +31,30 @@ specific language governing rights and limitations under the License.
 __author__ = "Sebastian M. Ernst"
 __email__ = "ernst@pleiszenburg.de"
 __version__ = "0.2.0"
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# EXPORTS
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+from .kernel._base import (
+    UniverseBase,
+    UniverseError,
+    PointMass,
+    STATE_PREINIT,
+    STATE_STARTED,
+    STATE_STOPPED,
+    DIMS,
+    DEFAULT_DTYPE,
+)
+from .kernel._shm import (
+    ShmPool,
+    Param,
+    WorkerBase,
+)
+from .lib.load import inventory
+from .lib.timing import (
+    TimerError,
+    BestRunTimer,
+    AverageTimer,
+    ElapsedTimer,
+)
