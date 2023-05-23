@@ -52,6 +52,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx_autodoc_typehints',
     'sphinx_rtd_theme',
+    "sphinx_click",
     'myst_parser',
 ]
 
