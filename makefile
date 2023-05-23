@@ -42,6 +42,9 @@ clean:
 	make _clean_bin
 	make _clean_plot
 
+docs:
+	@(cd docs; make clean; make html)
+
 ext:
 	python setup.py build_ext --inplace
 
@@ -58,3 +61,5 @@ release:
 	python setup.py sdist
 	# gpg --detach-sign -a dist/gravitation*.whl
 	gpg --detach-sign -a dist/gravitation*.tar.gz
+
+.PHONY: docs
