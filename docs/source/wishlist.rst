@@ -36,6 +36,7 @@ Desired / Planned Kernels
 - Lisp backend(s)
 - Parallel backend(s) based on MPI via plain C or `mpi4py`_
 - Parallel backend(s) based on `Dask`_
+- `Mojo`_, once released
 
 .. _numpy docs: https://numpy.org/doc/stable/user/c-info.ufunc-tutorial.html
 .. _ufunclab: https://github.com/WarrenWeckesser/ufunclab
@@ -43,11 +44,11 @@ Desired / Planned Kernels
 .. _pythran: https://github.com/serge-sans-paille/pythran
 .. _mypyc: https://github.com/mypyc/mypyc
 .. _struct.simd: https://doc.rust-lang.org/std/simd/struct.Simd.html
-
 .. _Dask: https://www.dask.org/
 .. _mpi4py: https://mpi4py.readthedocs.io/en/stable/
 .. _Matlab: https://www.mathworks.com/help/matlab/matlab-engine-for-python.html
 .. _cffi: https://cffi.readthedocs.io/en/latest/
+.. _Mojo: https://docs.modular.com/mojo/
 
 Interpreter level
 -----------------
