@@ -60,7 +60,7 @@ from ..lib.load import inventory
     help="name of benchmark data output file",
 )
 @click.option(
-    "--html_out",
+    "--out",
     "-o",
     default="verify.html",
     type=click.Path(exists=False, file_okay=True, dir_okay=False),
@@ -71,7 +71,7 @@ from ..lib.load import inventory
 def verify(
     reference: str,
     datafile: str,
-    html_out: str,
+    out: str,
 ):
     """verify kernel results"""
 
@@ -152,4 +152,4 @@ def verify(
         boxmode="group",
     )
 
-    _plot(fig, filename=html_out)
+    _plot(fig, filename=out)

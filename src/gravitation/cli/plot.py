@@ -53,7 +53,7 @@ import click
     help="name of input log file, can be specified multiple times",
 )
 @click.option(
-    "--html_out",
+    "--out",
     "-o",
     default="benchmark.html",
     type=click.Path(exists=False, file_okay=True, dir_okay=False),
@@ -61,7 +61,7 @@ import click
     required=True,
     help="name of output html file",
 )
-def plot(logfile, html_out):
+def plot(logfile, out):
     """plot benchmark json data file"""
 
     logs = []
@@ -117,4 +117,4 @@ def plot(logfile, html_out):
         ),
     )
     fig = go.Figure(data=traces, layout=layout)
-    _plot(fig, filename=html_out)
+    _plot(fig, filename=out)
