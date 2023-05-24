@@ -55,7 +55,6 @@ from ..lib.load import inventory
 )
 @click.option(
     "--data_out_file",
-    "-o",
     default="data_out.h5",
     type=str,
     show_default=True,
@@ -63,7 +62,6 @@ from ..lib.load import inventory
 )
 @click.option(
     "--html_out",
-    "-o",
     default="verify.html",
     type=click.Path(exists=False, file_okay=True, dir_okay=False),
     show_default=True,
