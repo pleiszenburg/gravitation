@@ -16,6 +16,7 @@ Desired / Planned Kernels
 - ``numpy``-implementation via custom ``ufunc``, see `numpy docs`_ and `ufunclab`_, implemented in C
 - `JAX`_
 - `pythran`_
+- `Nuitka`_
 - `mypyc`_
 - **Rust**, also see `struct.simd`_
 - **Go**
@@ -49,6 +50,7 @@ Desired / Planned Kernels
 .. _Matlab: https://www.mathworks.com/help/matlab/matlab-engine-for-python.html
 .. _cffi: https://cffi.readthedocs.io/en/latest/
 .. _Mojo: https://docs.modular.com/mojo/
+.. _Nuitka: https://github.com/Nuitka/Nuitka
 
 Interpreter level
 -----------------
