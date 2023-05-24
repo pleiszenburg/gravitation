@@ -45,13 +45,11 @@ from ..lib.load import inventory
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@click.command(short_help="verify model results")
-@click.option(
-    "--reference",
-    "-r",
+@click.command(short_help="verify model results against reference kernel")
+@click.argument(
+    "reference",
     type=click.Choice(sorted(list(inventory.keys()))),
     required=True,
-    help="name of reference kernel to compare against",
 )
 @click.option(
     "--data_out_file",
