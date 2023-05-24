@@ -20,7 +20,7 @@ keywords = [
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 dependencies = [
     "click",
     # "Cython",

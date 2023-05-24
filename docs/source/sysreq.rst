@@ -42,7 +42,7 @@ Operating System & Infrastructure Prerequisites
 Python Prerequisites
 --------------------
 
-- `CPython`_ 3.7 or later - likely part of your Linux distribution (consult its documentation for details)
+- `CPython`_ 3.9 or later - likely part of your Linux distribution (consult its documentation for details). Older versions are supported on a best-effort basis.
 - `PyCUDA`_
 - `PyTorch`_
 - `CuPy`_
