@@ -40,7 +40,7 @@ from .debug import typechecked
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-class _inventory(dict):
+class Inventory(dict):
     """kernel inventory (a dict, more or less)"""
 
     def __init__(self):
@@ -51,11 +51,11 @@ class _inventory(dict):
             for item in os.listdir(path)
             if not item.startswith("_")
         )
-        self.update({name: _kernel(path, name, isfile) for name, isfile in kernels})
+        self.update({name: Kernel(path, name, isfile) for name, isfile in kernels})
 
 
 @typechecked
-class _kernel:
+class Kernel:
     """kernel descriptor with lazy loading of kernel module, class and meta data"""
 
     def __init__(self, path: str, name: str, isfile: bool):
@@ -65,6 +65,9 @@ class _kernel:
         self._module = None
         self._src = None
         self._meta = None
+
+    def __repr__(self) -> str:
+        return f'<Kernel name={self._name:s} meta={self._meta is not None} module={self._module is not None}>'
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """provides access to kernel class constructor"""
@@ -173,4 +176,4 @@ def _parse_tree(leaf: Any) -> Any:
 # EXPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-inventory = _inventory()
+inventory = Inventory()
