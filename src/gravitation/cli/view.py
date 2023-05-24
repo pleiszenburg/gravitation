@@ -114,14 +114,10 @@ def view(
 ):
     """view a simulation progressing in realtime"""
 
-    threads = int(threads)
-
-    args = (
-        kernel,
-        threads,
-        len,
-    )
     kwargs = dict(
+        kernel = kernel,
+        threads = int(threads),
+        length = len,
         steps_per_frame=None if steps_per_frame == -1 else steps_per_frame,
         max_iterations=None if max_iterations == -1 else max_iterations,
     )
@@ -130,4 +126,4 @@ def view(
         f"gravitation.view.{backend:s}"
     ).Viewer
 
-    viewer(*args, **kwargs).loop()
+    viewer(**kwargs).loop()

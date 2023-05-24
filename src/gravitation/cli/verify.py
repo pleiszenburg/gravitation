@@ -52,14 +52,16 @@ from ..lib.load import inventory
     required=True,
 )
 @click.option(
-    "--data_out_file",
-    default="data_out.h5",
+    "--datafile",
+    "-d",
+    default="data.h5",
     type=str,
     show_default=True,
     help="name of benchmark data output file",
 )
 @click.option(
     "--html_out",
+    "-o",
     default="verify.html",
     type=click.Path(exists=False, file_okay=True, dir_okay=False),
     show_default=True,
@@ -68,15 +70,16 @@ from ..lib.load import inventory
 )
 def verify(
     reference: str,
-    data_out_file: str,
+    datafile: str,
     html_out: str,
 ):
     """verify kernel results"""
 
-    f = h5py.File(data_out_file, mode="r")
+    f = h5py.File(datafile, mode="r")
     atexit.register(f.close)
 
-    runs = [UniverseBase.import_name_group(key) for key in f.keys()]
+    runs = (UniverseBase.import_name_group(key) for key in f.keys())
+    runs = [run for run in runs if run['kernel'] != 'zero']
 
     kernels = sorted({meta["kernel"] for meta in runs})
     lens = sorted({meta["len"] for meta in runs})

@@ -81,12 +81,12 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     help="number of point masses",
 )
 @click.option(
-    "--data_out_file",
-    "-o",
-    default="data_out.h5",
+    "--datafile",
+    "-d",
+    default="data.h5",
     type=str,
     show_default=True,
-    help="name of output data file",
+    help="name data file",
 )
 @click.option(
     "--save_after_iteration",
@@ -97,28 +97,12 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     help="save model universe into file iteration n",
 )
 @click.option(
-    "--data_in_file",
-    "-j",
-    default="data_in.h5",
-    type=str,
-    show_default=True,
-    help="name of input data file",
-)
-@click.option(
-    "--data_in_group",
-    "-g",
-    default="state",
-    type=str,
-    show_default=True,
-    help="name of input data group",
-)
-@click.option(
     "--read_initial_state",
     "-r",
     default=False,
     is_flag=True,
     show_default=True,
-    help="name of input data file",
+    help="read initial state from data file",
 )
 @click.option(
     "--min_iterations",
@@ -147,10 +131,8 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 def worker(
     kernel,
     len,
-    data_out_file,
+    datafile,
     save_after_iteration,
-    data_in_file,
-    data_in_group,
     read_initial_state,
     min_iterations,
     min_total_runtime,
@@ -159,16 +141,14 @@ def worker(
     "isolated single-kernel benchmark worker entry point"
 
     _Worker(
-        kernel,
-        len,
-        data_out_file,
-        save_after_iteration,
-        data_in_file,
-        data_in_group,
-        read_initial_state,
-        min_iterations,
-        min_total_runtime,
-        int(threads),
+        kernel = kernel,
+        length = len,
+        datafile = datafile,
+        save_after_iteration = save_after_iteration,
+        read_initial_state = read_initial_state,
+        min_iterations = min_iterations,
+        min_total_runtime = min_total_runtime,
+        threads = int(threads),
     ).run()
 
 
@@ -179,11 +159,9 @@ class _Worker:
     def __init__(
         self,
         kernel: str,
-        len_: int,
-        data_out_file: str,
+        length: int,
+        datafile: str,
         save_after_iteration: Tuple[int, ...],
-        data_in_file: str,
-        data_in_group: str,
         read_initial_state: bool,
         min_iterations: int,
         min_total_runtime: int,
@@ -192,11 +170,9 @@ class _Worker:
         self._msg(log="START")
 
         self._kernel = kernel
-        self._len = len_
-        self._data_out_file = data_out_file
+        self._length = length
+        self._datafile = datafile
         self._save_after_iteration = save_after_iteration
-        self._data_in_file = data_in_file
-        self._data_in_group = data_in_group
         self._read_initial_state = read_initial_state
         self._min_iterations = min_iterations
         if (
@@ -226,18 +202,18 @@ class _Worker:
                     inventory[self._kernel]
                     .get_class()
                     .from_hdf5(
-                        fn=self._data_in_file,
-                        gn=self._data_in_group,
+                        fn=self._datafile,
+                        gn=inventory[self._kernel].get_class().export_name_group(kernel = 'zero', length = self._length, steps = 0),
                         threads=self._threads,
                     )
                 )
-                assert self._len == len(universe)
+                assert self._length == len(universe)
             else:
                 universe = (
                     inventory[self._kernel]
                     .get_class()
                     .from_galaxy(
-                        stars_len=self._len,
+                        length=self._length,
                         threads=self._threads,
                     )
                 )
@@ -259,7 +235,7 @@ class _Worker:
             log="INPUT",
             simulation=dict(
                 kernel=self._kernel,
-                stars_len=self._len,
+                length=self._length,
                 min_iterations=self._min_iterations,
                 min_total_runtime=self._min_total_runtime,
                 threads=self._threads,
@@ -324,7 +300,7 @@ class _Worker:
 
         try:
             self._universe.to_hdf5(
-                fn=self._data_out_file,
+                fn=self._datafile,
                 gn=self._universe.export_name_group(
                     kernel=self._kernel,
                     len=len(self._universe),
@@ -380,14 +356,12 @@ class _Worker:
 
 @typechecked
 def worker_command(
-    data_out_file: str,
+    datafile: str,
     interpreter: str,
     kernel: str,
-    len: int,
+    length: int,
     save_after_iteration: Tuple[int, ...],
-    data_in_file,
-    data_in_group,
-    read_initial_state,
+    read_initial_state: bool,
     min_iterations: int,
     min_total_runtime: int,
     threads: int,
@@ -402,9 +376,9 @@ def worker_command(
         "--kernel",
         kernel,
         "--len",
-        f"{len:d}",
-        "--data_out_file",
-        data_out_file,
+        f"{length:d}",
+        "--datafile",
+        datafile,
         *list(
             chain(
                 *[("--save_after_iteration", f"{it:d}") for it in save_after_iteration]
@@ -419,14 +393,6 @@ def worker_command(
     ]
 
     if read_initial_state:
-        cmd.extend(
-            [
-                "--data_in_file",
-                data_in_file,
-                "--data_in_group",
-                data_in_group,
-                "--read_initial_state",
-            ]
-        )
+        cmd.append("--read_initial_state")
 
     return cmd

@@ -63,7 +63,7 @@ class _Processing:
         self,
         kernel: str,
         threads: int,
-        bodies: int,
+        length: int,
         results: dict,
         outputs: List[str],
         fh: TextIOWrapper,
@@ -71,7 +71,7 @@ class _Processing:
     ):
         self._kernel = kernel
         self._threads = threads
-        self._bodies = bodies
+        self._length = length
         self._results = results
         self._outputs = outputs
         self._fh = fh
@@ -111,10 +111,10 @@ class _Processing:
 
         bests = self._results[self._kernel][self._threads]
         if msg["log"] == "BEST_TIME":
-            if self._bodies not in bests.keys():
-                bests[self._bodies] = msg["value"]
-            elif bests[self._bodies] > msg["value"]:
-                bests[self._bodies] = msg["value"]
+            if self._length not in bests.keys():
+                bests[self._length] = msg["value"]
+            elif bests[self._length] > msg["value"]:
+                bests[self._length] = msg["value"]
             else:
                 return
         else:
@@ -130,7 +130,7 @@ class _Processing:
         fig.plot(
             x,
             y,
-            label=f"{self._kernel:s} / t={self._threads:d} / n={self._bodies:d} / i={self._counter:d} / b={y[-1]*1e-9:.02e}s",
+            label=f"{self._kernel:s} / t={self._threads:d} / n={self._length:d} / i={self._counter:d} / b={y[-1]*1e-9:.02e}s",
             width=t.columns,
             height=t.lines,
             extra_gnuplot_arguments=[
@@ -171,39 +171,23 @@ class _UniverseZero(UniverseBase):
     default="benchmark.log",
     type=str,
     show_default=True,
-    help="name of output log file",
+    help="name of log file",
 )
 @click.option(
-    "--data_out_file",
-    "-o",
-    default="data_out.h5",
+    "--datafile",
+    "-d",
+    default="data.h5",
     type=str,
     show_default=True,
-    help="name of output data file",
+    help="name of data file",
 )
 @click.option(
-    "--data_in_file",
-    "-j",
-    default="data_in.h5",
-    type=str,
-    show_default=True,
-    help="name of input data file",
-)
-@click.option(
-    "--data_in_group",
-    "-g",
-    default="state",
-    type=str,
-    show_default=True,
-    help="name of input data group",
-)
-@click.option(
-    "--read_initial_state",
-    "-r",
+    "--common_initial_state",
+    "-c",
     default=False,
     is_flag=True,
     show_default=True,
-    help="name of input data file",
+    help="use common initial state per length for all kernels",
 )
 @click.option(
     "--interpreter",
@@ -229,7 +213,7 @@ class _UniverseZero(UniverseBase):
     help="run all kernels",
 )
 @click.option(
-    "--n_body_power_boundaries",
+    "--len_range",
     "-b",
     default=(2, 16),
     type=(int, int),
@@ -262,7 +246,6 @@ class _UniverseZero(UniverseBase):
 )
 @click.option(
     "--display",
-    "-d",
     default="plot",
     type=click.Choice(["plot", "log", "none"]),
     show_default=True,
@@ -280,14 +263,12 @@ class _UniverseZero(UniverseBase):
 )
 def benchmark(
     logfile,
-    data_out_file,
-    data_in_file,
-    data_in_group,
-    read_initial_state,
+    datafile,
+    common_initial_state,
     interpreter,
     kernel,
     all_kernels,
-    n_body_power_boundaries,
+    len_range,
     save_after_iteration,
     min_iterations,
     min_total_runtime,
@@ -316,13 +297,13 @@ def benchmark(
 
     atexit.register(shutdown)
 
-    if read_initial_state:
-        for bodies in _range(*n_body_power_boundaries):
+    if common_initial_state:
+        for length in _range(*len_range):
             print(
-                f"Creating initial state for {bodies:d} masses (max {2**n_body_power_boundaries[1]:d}) ..."
+                f"Creating initial state for {length:d} masses (max {2**len_range[1]:d}) ..."
             )
-            initial_state = _UniverseZero.from_galaxy(stars_len=bodies)
-            initial_state.to_hdf5(fn=data_in_file, gn=f"{data_in_group:s}_{bodies:d}")
+            initial_state = _UniverseZero.from_galaxy(length=length)
+            initial_state.to_hdf5(fn=datafile, gn=_UniverseZero.export_name_group(kernel = "zero", length = length, steps = 0))
 
     for name in names:
         inventory[name].load_meta()
@@ -331,17 +312,15 @@ def benchmark(
         threads_iterator = threads if parallel else [1]
 
         for threads_num in threads_iterator:
-            for bodies in _range(*n_body_power_boundaries):
+            for length in _range(*len_range):
                 run_command(
                     worker_command(
-                        data_out_file=data_out_file,
+                        datafile=datafile,
                         interpreter=interpreter,
                         kernel=name,
-                        len=bodies,
+                        length=length,
                         save_after_iteration=save_after_iteration,
-                        data_in_file=data_in_file,
-                        data_in_group=f"{data_in_group:s}_{bodies:d}",
-                        read_initial_state=read_initial_state,
+                        read_initial_state=common_initial_state,
                         min_iterations=min_iterations,
                         min_total_runtime=min_total_runtime,
                         threads=threads_num,
@@ -350,7 +329,7 @@ def benchmark(
                     processing=_Processing(
                         kernel=name,
                         threads=threads_num,
-                        bodies=bodies,
+                        length=length,
                         results=results,
                         outputs=outputs,
                         fh=fh,

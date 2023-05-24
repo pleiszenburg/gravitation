@@ -450,7 +450,7 @@ class UniverseBase(ABC):
         scale_r: float = 1.0e-10,
         dtype: str = DEFAULT_DTYPE,
         threads: int = 1,
-        stars_len: int = 2000,
+        length: int = 2000,
         r: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         v: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         g_alpha: float = 0.0,
@@ -483,11 +483,11 @@ class UniverseBase(ABC):
         )
         universe.masses[-1].assert_not_isnan()
 
-        for n in range(stars_len - 1):
+        for n in range(length - 1):
             alpha = random() * 2.0 * pi
 
             # generate disk of stars
-            if n < (stars_len * 4 // 5):
+            if n < (length * 4 // 5):
                 # random orbit radius
                 r_abs = (random() * 4.5 + 0.1) * radius
 
