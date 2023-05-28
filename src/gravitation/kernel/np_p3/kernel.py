@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/np_p3.py: Kernel
+    src/gravitation/kernel/np_p3/kernel.py: Kernel
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -48,15 +48,17 @@ import gc
 
 import numpy as np
 
-from ._base import UniverseBase, DIMS
-from ._block import Block
-from ._shm import Param, ShmPool, WorkerBase
+from .._base import UniverseBase, DIMS
+from .._block import Block
+from .._shm import Param, ShmPool, WorkerBase
+from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+@typechecked
 class UniverseWorker(WorkerBase):
     "Runs in process"
 

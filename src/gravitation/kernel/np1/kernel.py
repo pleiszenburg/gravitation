@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/np1.py: Kernel
+    src/gravitation/kernel/np1/kernel.py: Kernel
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -46,13 +46,15 @@ __authors__ = [
 
 import numpy as np
 
-from ._base import UniverseBase, DIMS
+from .._base import UniverseBase, DIMS
+from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+@typechecked
 class Universe(UniverseBase):
     __doc__ = __description__
 

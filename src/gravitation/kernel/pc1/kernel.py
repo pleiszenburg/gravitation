@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/pc1.py: Kernel
+    src/gravitation/kernel/pc1/kernel.py: Kernel
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -52,7 +52,8 @@ import pycuda.autoinit  # pylint: disable=unused-import
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 
-from ._base import UniverseBase, DIMS
+from .._base import UniverseBase, DIMS
+from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
@@ -106,6 +107,7 @@ __global__ void update_pair(
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+@typechecked
 class Universe(UniverseBase):
     __doc__ = __description__
 

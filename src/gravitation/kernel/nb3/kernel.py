@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/np2.py: Kernel
+    src/gravitation/kernel/np2/kernel.py: Kernel
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -49,7 +49,8 @@ from math import sqrt
 import numba as nb
 import numpy as np
 
-from ._base import UniverseBase, DIMS
+from .._base import UniverseBase, DIMS
+from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
@@ -85,6 +86,7 @@ def _step_stage1_guv(r, m, g, a):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+@typechecked
 class Universe(UniverseBase):
     __doc__ = __description__
 

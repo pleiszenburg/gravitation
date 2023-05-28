@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/cc2.py: Kernel
+    src/gravitation/kernel/cc2/kernel.py: Kernel
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -48,16 +48,17 @@ import ctypes
 import os
 import sysconfig
 
-from ._base import UniverseBase
+from .._base import UniverseBase
+from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+@typechecked
 class Universe(UniverseBase):
     __doc__ = __description__
-    _LIB = '_libcc2'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,7 +84,7 @@ class Universe(UniverseBase):
             ]
 
         lib = ctypes.cdll.LoadLibrary(
-            os.path.join(os.path.dirname(__file__), self._LIB, f"lib.{sysconfig.get_config_var('SOABI')}.so")
+            os.path.join(os.path.dirname(__file__), f"lib.{sysconfig.get_config_var('SOABI')}.so")
         )
         suffix = dict(float32 = 'f4', float64 = 'f8')[self._dtype]
 
