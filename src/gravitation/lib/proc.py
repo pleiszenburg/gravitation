@@ -36,14 +36,8 @@ from threading import Thread
 from time import sleep
 from typing import Callable, List, Optional, Tuple
 
+from .const import STDOUT, STDERR
 from .debug import typechecked
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CONST
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-STDOUT = 1
-STDERR = 2
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
