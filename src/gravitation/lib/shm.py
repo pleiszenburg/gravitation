@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/_shm.py: Shared memory infrastructure
+    src/gravitation/lib/shm.py: Shared memory infrastructure
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -37,11 +37,14 @@ from typing import Generator, List, Tuple, Union
 
 import numpy as np
 
+from .debug import typechecked
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+@typechecked
 class WorkerBase(ABC):
     "Base class for worker with shared memory support"
 
@@ -88,6 +91,7 @@ class WorkerBase(ABC):
         worker.run()
 
 
+@typechecked
 class Node:
     "Representing a worker in the main process"
 
@@ -154,6 +158,7 @@ class Node:
         self._proc = None
 
 
+@typechecked
 class Param:
     "Thin wrapper for arguments"
 
@@ -170,6 +175,7 @@ class Param:
         return self._kwargs
 
 
+@typechecked
 class ShmPool:
     "Minimal process pool with integrated shared memory support"
 
