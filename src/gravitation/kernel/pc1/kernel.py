@@ -52,7 +52,8 @@ import pycuda.autoinit  # pylint: disable=unused-import
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 
-from .._base import UniverseBase, DIMS
+from ...lib.base import UniverseBase
+from ...lib.const import DIMS
 from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

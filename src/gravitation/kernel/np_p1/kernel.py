@@ -49,8 +49,9 @@ from threading import Thread
 
 import numpy as np
 
-from .._base import UniverseBase, DIMS
-from .._block import Block
+from ...lib.base import UniverseBase
+from ...lib.block import Block
+from ...lib.const import DIMS
 from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

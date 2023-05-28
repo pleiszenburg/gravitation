@@ -47,7 +47,8 @@ __authors__ = [
 from itertools import islice
 from math import sqrt
 
-from .._base import UniverseBase, DIMS
+from ...lib.base import UniverseBase
+from ...lib.const import DIMS
 from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

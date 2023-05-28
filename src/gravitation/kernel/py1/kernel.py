@@ -46,8 +46,9 @@ __authors__ = [
 
 import math
 
-from .._base import UniverseBase, PointMass
+from ...lib.base import UniverseBase
 from ...lib.debug import typechecked
+from ...lib.mass import PointMass
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES

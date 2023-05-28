@@ -48,9 +48,10 @@ import gc
 
 import numpy as np
 
-from .._base import UniverseBase, DIMS
-from .._block import Block
-from .._shm import Param, ShmPool, WorkerBase
+from ...lib.base import UniverseBase
+from ...lib.block import Block
+from ...lib.const import DIMS
+from ...lib.shm import Param, ShmPool, WorkerBase
 from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

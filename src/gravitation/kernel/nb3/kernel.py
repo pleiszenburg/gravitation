@@ -49,7 +49,8 @@ from math import sqrt
 import numba as nb
 import numpy as np
 
-from .._base import UniverseBase, DIMS
+from ...lib.base import UniverseBase
+from ...lib.const import DIMS
 from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

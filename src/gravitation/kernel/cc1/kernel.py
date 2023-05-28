@@ -48,7 +48,7 @@ import ctypes
 import os
 import sysconfig
 
-from .._base import UniverseBase
+from ...lib.base import UniverseBase
 from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
