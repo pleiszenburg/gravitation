@@ -36,24 +36,27 @@ __version__ = "0.2.0"
 # EXPORTS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from .kernel._base import (
-    UniverseBase,
-    UniverseError,
-    PointMass,
+from .lib.base import UniverseBase
+from .lib.const import (
     STATE_PREINIT,
     STATE_STARTED,
     STATE_STOPPED,
     DIMS,
     DEFAULT_DTYPE,
 )
-from .kernel._shm import (
+from .lib.errors import (
+    BenchmarkLogError,
+    TimerError,
+    UniverseError,
+)
+from .lib.load import inventory
+from .lib.mass import PointMass
+from .lib.shm import (
     ShmPool,
     Param,
     WorkerBase,
 )
-from .lib.load import inventory
 from .lib.timing import (
-    TimerError,
     BestRunTimer,
     AverageTimer,
     ElapsedTimer,
