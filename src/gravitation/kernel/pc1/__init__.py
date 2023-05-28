@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/np_p3/__init__.py: Kernel init file
+    src/gravitation/kernel/pc1/__init__.py: Kernel init file
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
