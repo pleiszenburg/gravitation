@@ -35,14 +35,11 @@ from typing import List
 import click
 
 from ..lib.debug import typechecked
+from ..lib.errors import BenchmarkLogError
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-class BenchmarkLogError(Exception):
-    pass
 
 
 @typechecked
