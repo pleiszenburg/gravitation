@@ -37,14 +37,11 @@ except ImportError:  # CPython <= 3.6
     del _time
 
 from .debug import typechecked
+from .errors import TimerError
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-class TimerError(Exception):
-    pass
 
 
 @typechecked
