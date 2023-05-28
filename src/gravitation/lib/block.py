@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/_block.py: Infrastructure for parallelization
+    src/gravitation/lib/block.py: Infrastructure for parallelization
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -30,7 +30,7 @@ specific language governing rights and limitations under the License.
 
 from typing import Any, List
 
-from typeguard import typechecked
+from .debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASS
