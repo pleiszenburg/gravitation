@@ -49,7 +49,7 @@ try:
 except ModuleNotFoundError:
     GPUtil = None
 
-from ..kernel._base import UniverseBase
+from ..lib.base import UniverseBase
 from ..lib.debug import typechecked
 from ..lib.load import inventory
 from ..lib.timing import BestRunTimer, ElapsedTimer

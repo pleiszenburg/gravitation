@@ -37,7 +37,7 @@ import numpy as np
 from plotly.offline import plot as _plot
 import plotly.graph_objs as go
 
-from ..kernel._base import UniverseBase
+from ..lib.base import UniverseBase
 from ..lib.load import inventory
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
