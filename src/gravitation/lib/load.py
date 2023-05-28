@@ -121,7 +121,7 @@ class Kernel:
 
     def load_module(self):
         """actually imports kernel module"""
-        self._module = importlib.import_module(f"gravitation.kernel.{self._name:s}")
+        self._module = importlib.import_module(f"gravitation.kernel.{self._name:s}.kernel")
 
     def keys(self):
         """provides access to kernel meta data dict keys"""
