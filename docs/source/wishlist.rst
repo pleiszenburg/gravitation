@@ -38,6 +38,9 @@ Desired / Planned Kernels
 - Parallel backend(s) based on MPI via plain C or `mpi4py`_
 - Parallel backend(s) based on `Dask`_
 - `Mojo`_, once released
+- `SYCL`_
+- `OpenCL`_
+- `Vulkan Compute`_
 
 .. _numpy docs: https://numpy.org/doc/stable/user/c-info.ufunc-tutorial.html
 .. _ufunclab: https://github.com/WarrenWeckesser/ufunclab
@@ -51,6 +54,9 @@ Desired / Planned Kernels
 .. _cffi: https://cffi.readthedocs.io/en/latest/
 .. _Mojo: https://docs.modular.com/mojo/
 .. _Nuitka: https://github.com/Nuitka/Nuitka
+.. _SYCL: https://en.wikipedia.org/wiki/SYCL
+.. _OpenCL: https://en.wikipedia.org/wiki/OpenCL
+.. _Vulkan Compute: https://www.khronos.org/blog/getting-started-with-vulkan-compute-acceleration
 
 Interpreter level
 -----------------
