@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/_base.py: Base class, all kernels derive from it
+    src/gravitation/lib/base.py: Base class, all kernels derive from it
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -30,110 +30,27 @@ specific language governing rights and limitations under the License.
 
 from abc import ABC, abstractmethod
 from json import dumps, loads
-from math import atan2, cos, pi, sin, sqrt, isnan
+from math import atan2, cos, pi, sin, sqrt
 from random import gauss, random, shuffle
 from typing import Any, Generator, List, Optional, Tuple
 
 import h5py
 import numpy as np
-from typeguard import typechecked
+
+from .const import (
+    STATE_PREINIT,
+    STATE_STARTED,
+    STATE_STOPPED,
+    DIMS,
+    DEFAULT_DTYPE,
+)
+from .debug import typechecked
+from .errors import UniverseError
+from .mass import PointMass
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CONST
+# CLASS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-STATE_PREINIT = 0
-STATE_STARTED = 1
-STATE_STOPPED = 2
-
-DIMS = 3
-
-DEFAULT_DTYPE = "float64"
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CLASSES
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-class UniverseError(Exception):
-    pass
-
-
-@typechecked
-class PointMass:
-    """
-    holds point mass description
-    """
-
-    def __init__(self, name: str, r: List[float], v: List[float], m: float):
-        assert len(r) == DIMS
-        assert len(v) == DIMS
-
-        self._name, self._r, self._v, self._a, self._m = (
-            name,
-            r,
-            v,
-            [0.0 for _ in range(len(r))],
-            m,
-        )
-
-    def __repr__(self):
-        return (
-            "<PointMass name={name} | "
-            "{x:.4e}, {y:.4e}, {z:.4e} | "
-            "{vx:.4e}, {vy:.4e}, {vz:.4e}>"
-        ).format(
-            name=self._name,
-            **{key: val for key, val in zip(["x", "y", "z"], self._r)},
-            **{key: val for key, val in zip(["vx", "vy", "vz"], self._v)},
-        )
-
-    @property
-    def name(self) -> str:
-        "name"
-
-        return self._name
-
-    @property
-    def r(self) -> List[float]:
-        "location"
-
-        return self._r
-
-    @property
-    def v(self) -> List[float]:
-        "velocity"
-
-        return self._v
-
-    @property
-    def a(self) -> List[float]:
-        "acceleration"
-
-        return self._a
-
-    @property
-    def m(self) -> float:
-        "mass"
-
-        return self._m
-
-    def assert_not_isnan(self):
-        "check for NaN"
-
-        assert not any(isnan(d) for d in self._r)
-        assert not any(isnan(d) for d in self._v)
-        assert not any(isnan(d) for d in self._a)
-        assert not isnan(self._m)
-
-    def move(self, T: float):
-        """
-        moves with precomputed acceleration (base stage 2 implementation)
-        """
-
-        self._v[:] = [a * T + v for v, a in zip(self._v, self._a)]
-        self._r[:] = [v * T + r for r, v in zip(self._r, self._v)]
-        self._a[:] = [0.0 for _ in range(len(self._a))]
 
 
 @typechecked
