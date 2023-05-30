@@ -38,9 +38,7 @@ import h5py
 import numpy as np
 
 from .const import (
-    STATE_PREINIT,
-    STATE_STARTED,
-    STATE_STOPPED,
+    State,
     DIMS,
     DEFAULT_DTYPE,
 )
@@ -96,7 +94,7 @@ class UniverseBase(ABC):
         self._T = T
         self._G = G * (self._scale_r**3) / self._scale_m if not scaled else G
         self._masses = []
-        self._state = STATE_PREINIT
+        self._state = State.preinit
         self._dtype = dtype
         self._threads = threads
         self._meta = kwargs
@@ -147,9 +145,9 @@ class UniverseBase(ABC):
         create point mass object and add to universe
         """
 
-        if self._state == STATE_STARTED:
+        if self._state == State.started:
             raise UniverseError("simulation was started")
-        if self._state == STATE_STOPPED:
+        if self._state == State.stopped:
             raise UniverseError("simulation was stopped")
 
         if not scaled:
@@ -172,12 +170,12 @@ class UniverseBase(ABC):
         MUST BE CALLED ONCE: AFTER ADDING OBJECTS AND BEFORE STEPPING!
         """
 
-        if self._state == STATE_STARTED:
+        if self._state == State.started:
             raise UniverseError("simulation is running")
-        if self._state == STATE_STOPPED:
+        if self._state == State.stopped:
             raise UniverseError("simulation was stopped")
 
-        self._state = STATE_STARTED
+        self._state = State.started
         self.start_kernel()
 
     def start_kernel(self):
@@ -191,9 +189,9 @@ class UniverseBase(ABC):
         runs all three stages of one simulation (time-) step
         """
 
-        if self._state == STATE_PREINIT:
+        if self._state == State.preinit:
             raise UniverseError("simulation was not started")
-        if self._state == STATE_STOPPED:
+        if self._state == State.stopped:
             raise UniverseError("simulation was stopped")
 
         if stage1:
@@ -256,12 +254,12 @@ class UniverseBase(ABC):
         stops simulation
         CAN BE CALLED ONCE: AFTER STEPPING!
         """
-        if self._state == STATE_PREINIT:
+        if self._state == State.preinit:
             raise UniverseError("simulation was not started")
-        if self._state == STATE_STOPPED:
+        if self._state == State.stopped:
             raise UniverseError("simulation was stopped before")
 
-        self._state = STATE_STOPPED
+        self._state = State.stopped
         self.stop_kernel()
 
     def stop_kernel(self):

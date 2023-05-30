@@ -38,9 +38,7 @@ __version__ = "0.2.0"
 
 from .lib.base import UniverseBase
 from .lib.const import (
-    STATE_PREINIT,
-    STATE_STARTED,
-    STATE_STOPPED,
+    State,
     DIMS,
     DEFAULT_DTYPE,
 )
