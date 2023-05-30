@@ -31,7 +31,7 @@ specific language governing rights and limitations under the License.
 __longname__ = "pycuda-backend (3)"
 __version__ = "0.0.1"
 __description__ = (
-    "pycuda, O(N*(N-1)) complexity, optimization experiment - UNSTABLE, BUGS!"
+    "pycuda, O(N*(N-1)) complexity, optimization experiment - UNSTABLE, BUGS!"  # TODO bodies keep "disappearing"
 )
 __requirements__ = ["numpy", "pycuda"]
 __externalrequirements__ = ["cuda"]
