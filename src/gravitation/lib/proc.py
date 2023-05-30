@@ -36,7 +36,7 @@ from threading import Thread
 from time import sleep
 from typing import Callable, List, Optional, Tuple
 
-from .const import STDOUT, STDERR
+from .const import Stream
 from .debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -48,8 +48,8 @@ from .debug import typechecked
 class _Reader:
     "read from stream in thread"
 
-    def __init__(self, id: int, stream: BufferedReader, processing: Callable):
-        self._id = id
+    def __init__(self, stream_id: Stream, stream: BufferedReader, processing: Callable):
+        self._stream_id = stream_id
         self._stream = stream
         self._processing = processing
         self._output = []
@@ -79,7 +79,7 @@ class _Reader:
             else:
                 line = line.decode("utf-8")
                 self._output.append(line)
-                self._processing(self._id, line.strip("\n"))
+                self._processing(self._stream_id, line.strip("\n"))
                 self._queue.task_done()
 
     def close(self):
@@ -99,8 +99,8 @@ def run_command(
         processing = print
 
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout = _Reader(id=STDOUT, stream=proc.stdout, processing=processing)
-    stderr = _Reader(id=STDERR, stream=proc.stderr, processing=processing)
+    stdout = _Reader(stream_id=Stream.stdout, stream=proc.stdout, processing=processing)
+    stderr = _Reader(stream_id=Stream.stderr, stream=proc.stderr, processing=processing)
 
     while True:
         sleep(0.2)

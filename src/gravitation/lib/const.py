@@ -43,5 +43,6 @@ DIMS = 3
 
 DEFAULT_DTYPE = "float64"
 
-STDOUT = 1
-STDERR = 2
+class Stream(_Enum):
+    stdout = _auto()
+    stderr = _auto()

@@ -40,6 +40,7 @@ import psutil
 
 from .worker import worker_command
 from ..lib.base import UniverseBase
+from ..lib.const import Stream
 from ..lib.debug import typechecked
 from ..lib.load import inventory
 from ..lib.proc import run_command
@@ -84,7 +85,7 @@ class _Processing:
 
     def __call__(
         self,
-        id: int,  # 1 STDOUT, 2 STDERR
+        stream_id: Stream,
         line: str,
     ):
         self._fh.write(f"{line:s}\n")
