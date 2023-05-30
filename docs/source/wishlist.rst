@@ -18,11 +18,13 @@ Desired / Planned Kernels
 - `pythran`_
 - `Nuitka`_
 - `mypyc`_
+- `pyjion`_
 - **Rust**, also see `struct.simd`_
 - **Go**
 - Swift backend(s) - if this is at all possible
 - C backend(s) with CUDA (without ``PyCUDA``)
 - C backend(s) called through trough different interfaces (instead of ``ctypes``): `cffi`_, etc.
+- C via LLVM and Intel compilers
 - C++ backend(s) called through different interfaces: ``swig``, ``sip``, ``cython``, etc.
 - Faster CUDA backend(s) in general, with or without ``PyCUDA``
 - **openCL** backend(s), any language
@@ -41,6 +43,7 @@ Desired / Planned Kernels
 - `SYCL`_
 - `OpenCL`_
 - `Vulkan Compute`_
+- Visual Basic / VBA via COM
 
 .. _numpy docs: https://numpy.org/doc/stable/user/c-info.ufunc-tutorial.html
 .. _ufunclab: https://github.com/WarrenWeckesser/ufunclab
@@ -57,6 +60,7 @@ Desired / Planned Kernels
 .. _SYCL: https://en.wikipedia.org/wiki/SYCL
 .. _OpenCL: https://en.wikipedia.org/wiki/OpenCL
 .. _Vulkan Compute: https://www.khronos.org/blog/getting-started-with-vulkan-compute-acceleration
+.. _Pyjion: https://www.trypyjion.com/
 
 Interpreter level
 -----------------
