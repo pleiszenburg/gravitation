@@ -307,7 +307,10 @@ class UniverseBase(ABC):
         name[:] = buffer[:]
 
         for attr in self._ATTRS:
-            dg.attrs[attr] = getattr(self, f"_{attr:s}")
+            value = getattr(self, f"_{attr:s}")
+            if attr == 'dtype':
+                value = value.name
+            dg.attrs[attr] = value
         for k, v in self._meta.items():
             dg.attrs[k] = v
 
@@ -327,6 +330,8 @@ class UniverseBase(ABC):
         kwargs = {attr: dg.attrs[attr] for attr in dg.attrs.keys()}
         if isinstance(threads, int):
             kwargs["threads"] = threads
+        if 'dtype' in kwargs.keys():
+            kwargs['dtype'] = getattr(Dtype, kwargs['dtype'])
 
         universe = cls(scaled=True, **kwargs)
 
