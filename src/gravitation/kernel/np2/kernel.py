@@ -79,25 +79,25 @@ class Universe(UniverseBase):
 
     def start_kernel(self):
         # Allocate memory: Object parameters
-        self._r = np.zeros((len(self), DIMS), dtype=self._dtype)
-        self._a = np.zeros((len(self), DIMS), dtype=self._dtype)
-        self._m = np.zeros((len(self),), dtype=self._dtype)
+        self._r = np.zeros((len(self), DIMS), dtype=self._dtype.name)
+        self._a = np.zeros((len(self), DIMS), dtype=self._dtype.name)
+        self._m = np.zeros((len(self),), dtype=self._dtype.name)
 
         # Copy const data into Numpy infrastructure
         for idx, pm in enumerate(self._masses):
             self._m[idx] = pm.m
 
         # Allocate memory: Temporary variables
-        self._relative_r = np.zeros((len(self) - 1, DIMS), dtype=self._dtype)
-        self._distance_sq = np.zeros((len(self) - 1,), dtype=self._dtype)
-        self._distance_sqv = np.zeros((len(self) - 1, DIMS), dtype=self._dtype)
-        self._distance_inv = np.zeros((len(self) - 1,), dtype=self._dtype)
-        self._a_factor = np.zeros((len(self) - 1,), dtype=self._dtype)
-        self._a1 = np.zeros((len(self) - 1,), dtype=self._dtype)
-        self._a1r = np.zeros((len(self) - 1, DIMS), dtype=self._dtype)
-        self._a1v = np.zeros((DIMS,), dtype=self._dtype)
-        self._a2 = np.zeros((len(self) - 1,), dtype=self._dtype)
-        self._a2r = np.zeros((len(self) - 1, DIMS), dtype=self._dtype)
+        self._relative_r = np.zeros((len(self) - 1, DIMS), dtype=self._dtype.name)
+        self._distance_sq = np.zeros((len(self) - 1,), dtype=self._dtype.name)
+        self._distance_sqv = np.zeros((len(self) - 1, DIMS), dtype=self._dtype.name)
+        self._distance_inv = np.zeros((len(self) - 1,), dtype=self._dtype.name)
+        self._a_factor = np.zeros((len(self) - 1,), dtype=self._dtype.name)
+        self._a1 = np.zeros((len(self) - 1,), dtype=self._dtype.name)
+        self._a1r = np.zeros((len(self) - 1, DIMS), dtype=self._dtype.name)
+        self._a1v = np.zeros((DIMS,), dtype=self._dtype.name)
+        self._a2 = np.zeros((len(self) - 1,), dtype=self._dtype.name)
+        self._a2r = np.zeros((len(self) - 1, DIMS), dtype=self._dtype.name)
 
     def _update_pair(self, i: int, k: int):
         np.subtract(

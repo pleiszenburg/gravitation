@@ -100,9 +100,9 @@ class Universe(UniverseBase):
 
     def start_kernel(self):
         # Allocate memory: Object parameters
-        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._m = np.zeros((len(self),), dtype=self._dtype)
+        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._m = np.zeros((len(self),), dtype=self._dtype.name)
 
         # Copy const data into Numpy infrastructure
         for idx, pm in enumerate(self._masses):

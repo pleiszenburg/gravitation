@@ -86,26 +86,26 @@ class Universe(UniverseBase):
 
     def start_kernel(self):
         # Allocate memory: Object parameters
-        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._m = np.zeros((len(self),), dtype=self._dtype)
+        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._m = np.zeros((len(self),), dtype=self._dtype.name)
 
         # Copy const data into Numpy infrastructure
         for idx, pm in enumerate(self._masses):
             self._m[idx] = pm.m
 
         # Allocate memory: Temporary variables
-        self._relative_r = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype)
-        self._distance_sq = np.zeros((len(self) - 1, self._threads), dtype=self._dtype)
-        self._distance_sqv = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype)
-        self._distance_inv = np.zeros((len(self) - 1, self._threads), dtype=self._dtype)
-        self._a_factor = np.zeros((len(self) - 1, self._threads), dtype=self._dtype)
-        self._a1 = np.zeros((len(self) - 1, self._threads), dtype=self._dtype)
-        self._a1r = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype)
-        self._a1v = np.zeros((DIMS, self._threads), dtype=self._dtype)
-        self._a2 = np.zeros((len(self) - 1, self._threads), dtype=self._dtype)
-        self._a2r = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype)
-        self._at = np.zeros((DIMS, len(self), self._threads), dtype=self._dtype)
+        self._relative_r = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._distance_sq = np.zeros((len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._distance_sqv = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._distance_inv = np.zeros((len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._a_factor = np.zeros((len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._a1 = np.zeros((len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._a1r = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._a1v = np.zeros((DIMS, self._threads), dtype=self._dtype.name)
+        self._a2 = np.zeros((len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._a2r = np.zeros((DIMS, len(self) - 1, self._threads), dtype=self._dtype.name)
+        self._at = np.zeros((DIMS, len(self), self._threads), dtype=self._dtype.name)
 
         self._segments = Block.get_segments(n = len(self), threads = self._threads)
 

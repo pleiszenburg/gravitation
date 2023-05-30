@@ -40,6 +40,7 @@ import numpy as np
 from .const import (
     State,
     DIMS,
+    Dtype,
     DEFAULT_DTYPE,
 )
 from .debug import typechecked
@@ -76,7 +77,7 @@ class UniverseBase(ABC):
         G: float = 6.6740831e-11,  # gravitational constant
         scale_m: float = 1.0,  # scaling factor for mass (for kg)
         scale_r: float = 1.0,  # scaling factor for distances (for m)
-        dtype: str = DEFAULT_DTYPE,  # datatype for numerical computations
+        dtype: Dtype = DEFAULT_DTYPE,  # datatype for numerical computations
         threads: int = 1,  # maximum number of threads
         scaled: bool = False,
         **kwargs: Any,  # catch anything else
@@ -85,7 +86,6 @@ class UniverseBase(ABC):
         assert G > 0
         assert scale_m > 0
         assert scale_r > 0
-        assert dtype in ("float32", "float64")
         assert threads > 0
 
         self._scale_m = scale_m
@@ -106,7 +106,7 @@ class UniverseBase(ABC):
         return len(self._masses)
 
     def __repr__(self) -> str:
-        return f"<Universe len={len(self):d} dtype={self._dtype:s}>"
+        return f"<Universe len={len(self):d} dtype={self._dtype.name:s}>"
 
     @property
     def G(self) -> float:
@@ -285,7 +285,7 @@ class UniverseBase(ABC):
             raise ValueError("hdf5 group under this name already exists", fn, gn)
         dg = f.create_group(gn)
 
-        dtype = {"float32": "<f4", "float64": "<f8"}[self._dtype]
+        dtype = dict(float32 = '<f4', float64 = '<f8')[self._dtype.name]
 
         r = dg.create_dataset("r", (len(self), DIMS), dtype=dtype)
         v = dg.create_dataset("v", (len(self), DIMS), dtype=dtype)
@@ -363,7 +363,7 @@ class UniverseBase(ABC):
         T: float = 2.0e12,
         scale_m: float = 1.0e-30,
         scale_r: float = 1.0e-10,
-        dtype: str = DEFAULT_DTYPE,
+        dtype: Dtype = DEFAULT_DTYPE,
         threads: int = 1,
         length: int = 2000,
         r: Tuple[float, float, float] = (0.0, 0.0, 0.0),

@@ -115,7 +115,7 @@ class Universe(UniverseBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._dtype_size = getattr(np, self._dtype)(0).itemsize
+        self._dtype_size = getattr(np, self._dtype.name)(0).itemsize
         self._itype = 'int32'
 
         self._mem_size = None
@@ -143,9 +143,9 @@ class Universe(UniverseBase):
         self._len = getattr(np, self._itype)(len(self))
 
         # Allocate memory: Object parameters
-        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._m = np.zeros((len(self),), dtype=self._dtype)
+        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._m = np.zeros((len(self),), dtype=self._dtype.name)
 
         # Allocate memory: pycuda
         self._rx_gpu = cuda.mem_alloc(self._r[0, :].nbytes)  # pylint: disable=no-member
@@ -165,9 +165,9 @@ class Universe(UniverseBase):
 
         # Create cuda kernel for pair update
         self._sm = SourceModule(SRC.format(
-                dtype={"float32": "float", "float64": "double"}[self._dtype],
+                dtype={"float32": "float", "float64": "double"}[self._dtype.name],
                 itype=self._itype,
-                rsqrt={"float32": "rsqrtf", "float64": "rsqrt"}[self._dtype],
+                rsqrt={"float32": "rsqrtf", "float64": "rsqrt"}[self._dtype.name],
                 G=self._G,
             )
         )

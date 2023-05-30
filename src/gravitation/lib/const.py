@@ -41,7 +41,11 @@ class State(_Enum):
 
 DIMS = 3
 
-DEFAULT_DTYPE = "float64"
+class Dtype(_Enum):
+    float32 = _auto()
+    float64 = _auto()
+
+DEFAULT_DTYPE = Dtype.float64
 
 class Stream(_Enum):
     stdout = _auto()

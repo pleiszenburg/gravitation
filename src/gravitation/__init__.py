@@ -40,6 +40,7 @@ from .lib.base import UniverseBase
 from .lib.const import (
     State,
     DIMS,
+    Dtype,
     DEFAULT_DTYPE,
 )
 from .lib.errors import (

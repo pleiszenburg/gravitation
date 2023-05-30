@@ -67,9 +67,9 @@ class Universe(UniverseBase):
         self._m = None
 
     def start_kernel(self):
-        self._r = np.zeros((len(self), DIMS), dtype=self._dtype)
-        self._a = np.zeros((len(self), DIMS), dtype=self._dtype)
-        self._m = np.zeros((len(self),), dtype=self._dtype)
+        self._r = np.zeros((len(self), DIMS), dtype=self._dtype.name)
+        self._a = np.zeros((len(self), DIMS), dtype=self._dtype.name)
+        self._m = np.zeros((len(self),), dtype=self._dtype.name)
 
         for idx, pm in enumerate(self._masses):
             self._m[idx] = pm.m

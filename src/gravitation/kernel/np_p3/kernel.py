@@ -49,6 +49,7 @@ import gc
 import numpy as np
 
 from ...lib.base import UniverseBase
+from ...lib.const import Dtype, DEFAULT_DTYPE
 from ...lib.block import Block
 from ...lib.const import DIMS
 from ...lib.shm import Param, ShmPool, WorkerBase
@@ -63,23 +64,23 @@ from ...lib.debug import typechecked
 class UniverseWorker(WorkerBase):
     "Runs in process"
 
-    def __init__(self, *args, length: int = 0, dtype: str = '', G: float = 0.0, **kwargs):
+    def __init__(self, *args, length: int = 0, dtype: Dtype = DEFAULT_DTYPE, G: float = 0.0, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._length = length
         self._G = G
 
         # Allocate memory: Temporary variables
-        self._relative_r = np.zeros((DIMS, length - 1), dtype=dtype)
-        self._distance_sq = np.zeros((length - 1,), dtype=dtype)
-        self._distance_sqv = np.zeros((DIMS, length - 1), dtype=dtype)
-        self._distance_inv = np.zeros((length - 1,), dtype=dtype)
-        self._a_factor = np.zeros((length - 1,), dtype=dtype)
-        self._a1 = np.zeros((length - 1,), dtype=dtype)
-        self._a1r = np.zeros((DIMS, length - 1), dtype=dtype)
-        self._a1v = np.zeros((DIMS,), dtype=dtype)
-        self._a2 = np.zeros((length - 1,), dtype=dtype)
-        self._a2r = np.zeros((DIMS, length - 1), dtype=dtype)
+        self._relative_r = np.zeros((DIMS, length - 1), dtype=dtype.name)
+        self._distance_sq = np.zeros((length - 1,), dtype=dtype.name)
+        self._distance_sqv = np.zeros((DIMS, length - 1), dtype=dtype.name)
+        self._distance_inv = np.zeros((length - 1,), dtype=dtype.name)
+        self._a_factor = np.zeros((length - 1,), dtype=dtype.name)
+        self._a1 = np.zeros((length - 1,), dtype=dtype.name)
+        self._a1r = np.zeros((DIMS, length - 1), dtype=dtype.name)
+        self._a1v = np.zeros((DIMS,), dtype=dtype.name)
+        self._a2 = np.zeros((length - 1,), dtype=dtype.name)
+        self._a2r = np.zeros((DIMS, length - 1), dtype=dtype.name)
 
         gc.disable()
 
@@ -151,10 +152,10 @@ class Universe(UniverseBase):
         )
 
         # Allocate memory: Object parameters
-        self._r = self._pool.empty('r', shape = (DIMS, len(self)), dtype=self._dtype)
-        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype)
-        self._at = self._pool.empty('at', shape = (self._threads, DIMS, len(self)), dtype=self._dtype)
-        self._m = self._pool.empty('m', shape = (len(self),), dtype=self._dtype)
+        self._r = self._pool.empty('r', shape = (DIMS, len(self)), dtype=self._dtype.name)
+        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
+        self._at = self._pool.empty('at', shape = (self._threads, DIMS, len(self)), dtype=self._dtype.name)
+        self._m = self._pool.empty('m', shape = (len(self),), dtype=self._dtype.name)
 
         # Copy const data into Numpy infrastructure
         for idx, pm in enumerate(self._masses):

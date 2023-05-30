@@ -70,7 +70,7 @@ class Universe(UniverseBase):
     def start_kernel(self):
         cdtype = getattr(
             ctypes,
-            f"c_{dict(float32 = 'float', float64 = 'double')[self._dtype]:s}",
+            f"c_{dict(float32 = 'float', float64 = 'double')[self._dtype.name]:s}",
         )
         array_fields = ["rx", "ry", "rz", "ax", "ay", "az", "m"]
         array_type = cdtype * len(self)
@@ -86,7 +86,7 @@ class Universe(UniverseBase):
         lib = ctypes.cdll.LoadLibrary(
             os.path.join(os.path.dirname(__file__), f"lib.{sysconfig.get_config_var('SOABI')}.so")
         )
-        suffix = dict(float32 = 'f4', float64 = 'f8')[self._dtype]
+        suffix = dict(float32 = 'f4', float64 = 'f8')[self._dtype.name]
 
         univ_alloc_c = getattr(lib, f'univ_alloc_{suffix:s}')
         univ_alloc_c.argtypes = (ctypes.POINTER(Univ),)
