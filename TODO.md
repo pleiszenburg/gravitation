@@ -1,7 +1,6 @@
 
 # Infrastructure
 
-* `gravitation accuracy` (analyze kernels' relative numerical accuracy)
 * Support for `conda`
 * Add tests (pytest is desired)
 
