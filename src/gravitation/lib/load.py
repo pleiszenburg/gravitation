@@ -47,21 +47,20 @@ class Inventory(dict):
         super().__init__()
         path = os.path.join(os.path.dirname(__file__), "..", "kernel")
         kernels = (
-            (item[:-3], True) if item.lower().endswith(".py") else (item, False)
+            item
             for item in os.listdir(path)
             if not item.startswith("_")
         )
-        self.update({name: Kernel(path, name, isfile) for name, isfile in kernels})
+        self.update({name: Kernel(path, name) for name in kernels})
 
 
 @typechecked
 class Kernel:
     """kernel descriptor with lazy loading of kernel module, class and meta data"""
 
-    def __init__(self, path: str, name: str, isfile: bool):
+    def __init__(self, path: str, name: str):
         self._path = path
         self._name = name
-        self._isfile = isfile
         self._module = None
         self._src = None
         self._meta = None
@@ -90,9 +89,7 @@ class Kernel:
     def load_meta(self):
         """loads meta data from kernel without importing it"""
         with open(
-            os.path.join(self._path, self._name + ".py")
-            if self._isfile
-            else os.path.join(self._path, self._name, "__init__.py"),
+            os.path.join(self._path, self._name, "__init__.py"),
             mode="r",
             encoding="utf-8",
         ) as f:
