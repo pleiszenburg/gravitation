@@ -51,6 +51,7 @@ except ModuleNotFoundError:
 
 from ._kernel import add_kernel_commands
 from ..lib.baseuniverse import BaseUniverse
+from ..lib.const import DEFAULT_LEN
 from ..lib.debug import typechecked
 from ..lib.errors import VariationError
 from ..lib.kernel import Kernel, KERNELS
@@ -65,7 +66,7 @@ from ..lib.variation import Variation
 @click.group(short_help="isolated single-kernel benchmark worker")
 @click.option(
     "--len",
-    default=2000,
+    default=DEFAULT_LEN,
     type=int,
     show_default=True,
     help="number of point masses",

@@ -34,6 +34,7 @@ import click
 
 from ._kernel import add_kernel_commands
 
+from ..lib.const import DEFAULT_LEN
 from ..lib.errors import VariationError
 from ..lib.kernel import Kernel
 from ..lib.view import VIEWS
@@ -46,7 +47,7 @@ from ..lib.view import VIEWS
 @click.group(short_help="view a simulation progressing in realtime")
 @click.option(
     "--len",
-    default=2048,
+    default=DEFAULT_LEN,
     type=int,
     show_default=True,
     help="number of point masses",

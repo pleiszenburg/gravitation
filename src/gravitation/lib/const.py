@@ -75,4 +75,6 @@ DEFAULT_DTYPE = Dtype.float64
 DEFAULT_TARGET = Target.cpu
 DEFAULT_THREADS = Threads.single
 
+DEFAULT_LEN = 2048
+
 DIMS = 3
