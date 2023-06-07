@@ -191,14 +191,6 @@ class _UniverseZero(BaseUniverse):
     help="use common initial state per length for all kernels",
 )
 @click.option(
-    "--interpreter",
-    "-e",
-    default="python3",
-    type=str,
-    show_default=True,
-    help="python interpreter command",
-)
-@click.option(
     "--kernel",
     "-k",
     type=click.Choice(sorted(list(KERNELS.keys()))),
@@ -266,7 +258,6 @@ def benchmark(
     logfile,
     datafile,
     common_initial_state,
-    interpreter,
     kernel,
     all_kernels,
     len_range,
@@ -317,7 +308,6 @@ def benchmark(
                 run_command(
                     worker_command(
                         datafile=datafile,
-                        interpreter=interpreter,
                         kernel=name,
                         length=length,
                         save_after_iteration=save_after_iteration,

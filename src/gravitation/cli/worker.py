@@ -353,7 +353,6 @@ class _Worker:
 @typechecked
 def worker_command(
     datafile: str,
-    interpreter: str,
     kernel: str,
     length: int,
     save_after_iteration: Tuple[int, ...],
@@ -365,9 +364,7 @@ def worker_command(
     "returns command list for use with subprocess.Popen"
 
     cmd = [
-        interpreter,
-        "-c",
-        "from gravitation.cli import cli; cli()",
+        "gravitation",
         "worker",
         "--kernel",
         kernel,
