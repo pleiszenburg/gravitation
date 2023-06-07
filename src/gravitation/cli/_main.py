@@ -39,7 +39,7 @@ import click
 
 
 def _add_commands(ctx):
-    """auto-detects sub-commands"""
+    """auto-detects gravitation sub-commands"""
     for cmd in (
         item[:-3] if item.lower().endswith(".py") else item[:]
         for item in os.listdir(os.path.dirname(__file__))
