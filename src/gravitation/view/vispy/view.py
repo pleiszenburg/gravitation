@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/view/vispy.py: vispy view backend
+    src/gravitation/view/vispy/view.py: vispy view backend
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -28,11 +28,10 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-import atexit
-from typing import Optional
+from . import DESCRIPTION
 
-from ..lib.debug import typechecked
-from ..lib.load import inventory
+from gravitation import typechecked
+from gravitation import BaseViewer
 
 import numpy as np
 from vispy import app
@@ -44,42 +43,17 @@ from vispy.scene.visuals import Markers, XYZAxis
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 @typechecked
-class Viewer:
-    """
-    viewer based on pygame
-    """
+class Viewer(BaseViewer):
+    __doc__ = DESCRIPTION
 
-    def __init__(
-        self,
-        kernel: str,
-        threads: int,
-        length: int,
-        steps_per_frame: Optional[int] = None,
-        max_iterations: Optional[int] = None,
-    ):
-
-        self._max_iterations = max_iterations
-        self._iteration_counter = 0
-
-        inventory[kernel].load_module()
-        self._universe = (
-            inventory[kernel]
-            .get_class()
-            .from_galaxy(
-                length=length,
-                threads=threads,
-            )
-        )
-        self._universe.start()
-        atexit.register(self._universe.stop)
-
-        _ = self._universe.meta["steps_per_frame"] if steps_per_frame is None else steps_per_frame  # TODO
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self._canvas = SceneCanvas(keys='interactive', show=True)
         self._view = self._canvas.central_widget.add_view()
 
         self._pos = np.zeros((len(self._universe), 3), dtype = 'f4')
-        self._update_data()
+        self._push_data()
         symbols = {
             "back hole": "x",
             "cloud star": "^",
@@ -105,15 +79,15 @@ class Viewer:
         self._axis = XYZAxis(parent=self._view.scene)
         self._timer = app.Timer('auto', connect = self._update, start = True)
 
-    def _update_data(self):
+    def _push_data(self):
 
         for idx, mass in enumerate(self._universe):
             self._pos[idx, :] = [n * 1e-10 for n in mass.r]
 
     def _update(self, event):
 
-        self._universe.step()
-        self._update_data()
+        self._simulation()
+        self._push_data()
 
         self._scatter.set_data(
             pos = self._pos,
@@ -123,7 +97,8 @@ class Viewer:
             symbol=self._symbols,
         )
 
-    def loop(self):
+    def run(self):
+        "runs viewer"
 
         self._canvas.show()
         app.run()
