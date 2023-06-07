@@ -54,7 +54,7 @@ class BaseViewer(ABC):
         kernel: str,
         length: int,
         variation: Variation,
-        average_width: int = 20,  # average timers over this many samples
+        timer_buffer: int = 20,  # average timers over this many samples
         iterations_per_frame: int = 1,
         max_iterations: Optional[int] = None,
     ):
@@ -74,8 +74,8 @@ class BaseViewer(ABC):
         self._universe.start()
         atexit.register(self._universe.stop)
 
-        self._timer_sps = AverageTimer(average_width)
-        self._timer_fps = AverageTimer(average_width)
+        self._timer_sps = AverageTimer(timer_buffer)
+        self._timer_fps = AverageTimer(timer_buffer)
 
         self._timer_sps.start()
         self._timer_sps.stop()
