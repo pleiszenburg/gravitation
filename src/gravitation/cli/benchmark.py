@@ -39,10 +39,10 @@ import click
 import psutil
 
 from .worker import worker_command
-from ..lib.base import UniverseBase
+from ..lib.baseuniverse import BaseUniverse
 from ..lib.const import Stream
 from ..lib.debug import typechecked
-from ..lib.load import inventory
+from ..lib.kernel import KERNELS
 from ..lib.proc import run_command
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -158,7 +158,7 @@ def _range(start: int, end: int) -> Generator:
 
 
 @typechecked
-class _UniverseZero(UniverseBase):
+class _UniverseZero(BaseUniverse):
     "Generating common start universe"
 
     def step_stage1(self):
@@ -201,7 +201,7 @@ class _UniverseZero(UniverseBase):
 @click.option(
     "--kernel",
     "-k",
-    type=click.Choice(sorted(list(inventory.keys()))),
+    type=click.Choice(sorted(list(KERNELS.keys()))),
     multiple=True,
     help="name of kernel module, can be specified multiple times",
 )
@@ -279,7 +279,7 @@ def benchmark(
     """run a benchmark across kernels"""
 
     if all_kernels:
-        names = sorted(list(inventory.keys()))
+        names = sorted(list(KERNELS.keys()))
     else:
         names = list(kernel)
 
@@ -307,8 +307,8 @@ def benchmark(
             initial_state.to_hdf5(fn=datafile, gn=_UniverseZero.export_name_group(kernel = "zero", length = length, steps = 0))
 
     for name in names:
-        inventory[name].load_meta()
-        parallel = inventory[name]["parallel"]
+        KERNELS[name].load_meta()
+        parallel = KERNELS[name]["parallel"]
         parallel = parallel if isinstance(parallel, bool) else False
         threads_iterator = threads if parallel else [1]
 
