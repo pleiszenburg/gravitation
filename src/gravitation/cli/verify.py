@@ -37,8 +37,8 @@ import numpy as np
 from plotly.offline import plot as _plot
 import plotly.graph_objs as go
 
-from ..lib.base import UniverseBase
-from ..lib.load import inventory
+from ..lib.baseuniverse import BaseUniverse
+from ..lib.kernel import KERNELS
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
@@ -48,7 +48,7 @@ from ..lib.load import inventory
 @click.command(short_help="verify model results against reference kernel")
 @click.argument(
     "reference",
-    type=click.Choice(sorted(list(inventory.keys()))),
+    type=click.Choice(sorted(list(KERNELS.keys()))),
     required=True,
 )
 @click.option(
@@ -78,7 +78,7 @@ def verify(
     f = h5py.File(datafile, mode="r")
     atexit.register(f.close)
 
-    runs = (UniverseBase.import_name_group(key) for key in f.keys())
+    runs = (BaseUniverse.import_name_group(key) for key in f.keys())
     runs = [run for run in runs if run['kernel'] != 'zero']
 
     kernels = sorted({meta["kernel"] for meta in runs})
@@ -103,10 +103,10 @@ def verify(
         data[kernel] = []
 
         for len_ in lens:
-            reference_key = UniverseBase.export_name_group(
+            reference_key = BaseUniverse.export_name_group(
                 kernel=reference, len=len_, step=step
             )
-            kernel_key = UniverseBase.export_name_group(
+            kernel_key = BaseUniverse.export_name_group(
                 kernel=kernel, len=len_, step=step
             )
 
