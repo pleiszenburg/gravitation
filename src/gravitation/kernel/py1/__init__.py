@@ -23,3 +23,21 @@ specific language governing rights and limitations under the License.
 </LICENSE_BLOCK>
 
 """
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# IMPORT
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+from gravitation import Dtype, Target, Threads
+from gravitation import Variation, Variations
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# KERNEL META
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+DESCRIPTION = "pure python backend, reference kernel"
+REQUIREMENTS = []
+
+VARIATIONS = Variations(
+    Variation(dtype = Dtype.float64, target = Target.cpu, threads = Threads.single),
+)

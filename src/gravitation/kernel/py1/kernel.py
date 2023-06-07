@@ -25,30 +25,18 @@ specific language governing rights and limitations under the License.
 """
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# KERNEL META
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-__longname__ = "python-backend (1)"
-__version__ = "0.1.0"
-__description__ = "pure python backend, reference kernel"
-__requirements__ = []
-__externalrequirements__ = []
-__interpreters__ = ["python3", "pypy3"]
-__parallel__ = False
-__license__ = "GPLv2"
-__authors__ = [
-    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
-]
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import math
 
-from ...lib.base import UniverseBase
-from ...lib.debug import typechecked
-from ...lib.mass import PointMass
+from . import DESCRIPTION
+
+from gravitation import BaseUniverse
+from gravitation import Dtype
+from gravitation import typechecked
+from gravitation import VariationError
+from gravitation import PointMass
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -56,8 +44,12 @@ from ...lib.mass import PointMass
 
 
 @typechecked
-class Universe(UniverseBase):
-    __doc__ = __description__
+class Universe(BaseUniverse):
+    __doc__ = DESCRIPTION
+
+    def start_kernel(self):
+        if self._variation['dtype'] is Dtype.float32:
+            raise VariationError('kernel does not support float32')
 
     def _update_pair(self, pm1: PointMass, pm2: PointMass):
         relative_r = [(r1 - r2) for r1, r2 in zip(pm1.r, pm2.r)]
