@@ -32,24 +32,20 @@ import atexit
 from io import TextIOWrapper
 import json
 import shutil
+import sys
 from typing import Generator, List
 
 import termplotlib as tpl
 import click
-import psutil
 
 from .worker import worker_command
+
 from ..lib.baseuniverse import BaseUniverse
 from ..lib.const import Stream
 from ..lib.debug import typechecked
 from ..lib.kernel import KERNELS
 from ..lib.proc import run_command
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CONST
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-MAX_TREADS = psutil.cpu_count(logical=True)
+from ..lib.variation import Variation
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
@@ -63,6 +59,7 @@ class _Processing:
     def __init__(
         self,
         kernel: str,
+        variation: Variation,
         length: int,
         results: dict,
         outputs: List[str],
@@ -76,6 +73,10 @@ class _Processing:
         self._fh = fh
         self._display = display
 
+        self._variation = variation
+        variation = variation.to_dict()
+        self._variation_str = ' / '.join([f'{key:s}={variation[key]:s}' for key in sorted(variation.keys())])
+
         self._counter = 0
 
         self._error_state = False
@@ -87,6 +88,7 @@ class _Processing:
         line: str,
     ):
         self._fh.write(f"{line:s}\n")
+        self._fh.flush()
         if self._display == "log":
             print(line)
         self._outputs.append(line)
@@ -125,11 +127,21 @@ class _Processing:
         x = sorted(list(bests.keys()))
         y = [bests[n]*1e-9 for n in x]
         t = shutil.get_terminal_size((80, 20))
+
+        label = " / ".join([
+            f"kernel={self._kernel:s}",
+            self._variation_str,
+            f"implementation={sys.implementation.name:s}",
+            f"len={self._length:d}",
+            f"iteration={self._counter:d}",
+            f"best={y[-1]*1e-9:.02e}s",
+        ])
+
         fig = tpl.figure()
         fig.plot(
             x,
             y,
-            label=f"{self._kernel:s} / n={self._length:d} / i={self._counter:d} / b={y[-1]*1e-9:.02e}s",
+            label=label,
             width=t.columns,
             height=t.lines,
             extra_gnuplot_arguments=[
@@ -261,17 +273,13 @@ def benchmark(
     else:
         names = list(kernel)
 
-    results = {
-        name: {}
-        for name in names
-    }
+    results = {name: {} for name in names}
     outputs = []
 
     fh = open(logfile, "w", encoding="utf-8")
 
     def shutdown():
         fh.close()
-
     atexit.register(shutdown)
 
     if common_initial_state:
@@ -283,29 +291,32 @@ def benchmark(
             initial_state.to_hdf5(fn=datafile, gn=_UniverseZero.export_name_group(kernel = "zero", length = length, steps = 0))
 
     for name in names:
-        KERNELS[name].load_meta()
-        parallel = KERNELS[name]["parallel"]
-        parallel = parallel if isinstance(parallel, bool) else False
 
-        for length in _range(*len_range):
-            run_command(
-                worker_command(
-                    datafile=datafile,
-                    kernel=name,
-                    length=length,
-                    save_after_iteration=save_after_iteration,
-                    read_initial_state=common_initial_state,
-                    min_iterations=min_iterations,
-                    min_total_runtime=min_total_runtime,
-                ),
-                unbuffer=True,
-                processing=_Processing(
-                    kernel=name,
-                    length=length,
-                    results=results,
-                    outputs=outputs,
-                    fh=fh,
-                    display=display,
-                ),
-            )
-            fh.flush()
+        KERNELS[name].load_meta()
+
+        for variation in KERNELS[name].variations:
+
+            for length in _range(*len_range):
+
+                run_command(
+                    worker_command(
+                        datafile=datafile,
+                        kernel=name,
+                        length=length,
+                        save_after_iteration=save_after_iteration,
+                        read_initial_state=common_initial_state,
+                        min_iterations=min_iterations,
+                        min_total_runtime=min_total_runtime,
+                        **variation.to_dict(),
+                    ),
+                    unbuffer=True,
+                    processing=_Processing(
+                        kernel=name,
+                        variation=variation,
+                        length=length,
+                        results=results,
+                        outputs=outputs,
+                        fh=fh,
+                        display=display,
+                    ),
+                )
