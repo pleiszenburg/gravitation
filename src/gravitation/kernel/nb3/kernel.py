@@ -47,7 +47,7 @@ _target = VARIATIONS.selected['target']
 _threads = VARIATIONS.selected['threads']
 
 if _target is Target.cpu:
-    if not (_threads is Threads.auto or _threads is Threads.single):
+    if _threads is Threads.auto or _threads is Threads.single:
         _target = 'cpu'
     else:
         _target = 'parallel'
