@@ -31,8 +31,17 @@ specific language governing rights and limitations under the License.
 class BenchmarkLogError(Exception):
     pass
 
+class KernelError(Exception):
+    pass
+
 class TimerError(Exception):
     pass
 
 class UniverseError(Exception):
+    pass
+
+class VariationError(Exception):
+    pass
+
+class ViewError(Exception):
     pass
