@@ -23,3 +23,25 @@ specific language governing rights and limitations under the License.
 </LICENSE_BLOCK>
 
 """
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# IMPORT
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+from gravitation import Dtype, Target, Threads
+from gravitation import Variation, Variations
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# KERNEL META
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+DESCRIPTION = "numba guvectorize-kernel"
+REQUIREMENTS = ["numba", "numpy"]
+
+VARIATIONS = Variations()
+for dtype in Dtype:
+    for threads in Threads:
+        if threads is Threads.auto:
+            continue
+        VARIATIONS.add(Variation(dtype = dtype, target = Target.cpu, threads = threads))
+    VARIATIONS.add(Variation(dtype = dtype, target = Target.gpu, threads = Threads.auto))

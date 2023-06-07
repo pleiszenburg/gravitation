@@ -25,22 +25,6 @@ specific language governing rights and limitations under the License.
 """
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# KERNEL META
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-__longname__ = "numba-numpy-backend (3)"
-__version__ = "0.0.1"
-__description__ = "numba guvectorize-kernel"
-__requirements__ = ["numba", "numpy"]
-__externalrequirements__ = []
-__interpreters__ = ["python3"]
-__parallel__ = False
-__license__ = "GPLv2"
-__authors__ = [
-    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
-]
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -49,9 +33,28 @@ from math import sqrt
 import numba as nb
 import numpy as np
 
-from ...lib.base import UniverseBase
-from ...lib.const import DIMS
-from ...lib.debug import typechecked
+from . import DESCRIPTION, VARIATIONS
+
+from gravitation import BaseUniverse
+from gravitation import DIMS, Target, Threads
+from gravitation import typechecked
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# CONFIG
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+_target = VARIATIONS.selected['target']
+_threads = VARIATIONS.selected['threads']
+
+if _target is Target.cpu:
+    if not (_threads is Threads.auto or _threads is Threads.single):
+        _target = 'cpu'
+    else:
+        _target = 'parallel'
+        if _threads is not Threads.auto:
+            nb.set_num_threads(_threads.value)
+else:  # gpu:
+    _target = 'cuda'
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
@@ -60,7 +63,7 @@ from ...lib.debug import typechecked
 @nb.guvectorize([
     'void(f4[:,:],f4[:],f4,f4[:,:])',
     'void(f8[:,:],f8[:],f8,f8[:,:])',
-], '(m,n),(n),()->(m,n)', nopython = True, target = 'cpu')
+], '(m,n),(n),()->(m,n)', nopython = True, target = _target)
 def _step_stage1_guv(r, m, g, a):
     for idx in range(0, r.shape[1]):
         for jdx in range(idx + 1, r.shape[1]):
@@ -88,8 +91,8 @@ def _step_stage1_guv(r, m, g, a):
 
 
 @typechecked
-class Universe(UniverseBase):
-    __doc__ = __description__
+class Universe(BaseUniverse):
+    __doc__ = DESCRIPTION
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -98,11 +101,13 @@ class Universe(UniverseBase):
         self._a = None
         self._m = None
 
+        assert self._variation == VARIATIONS.selected  # TODO check, just in case
+
     def start_kernel(self):
         # Allocate memory: Object parameters
-        self._r = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
-        self._a = np.zeros((DIMS, len(self)), dtype=self._dtype.name)
-        self._m = np.zeros((len(self),), dtype=self._dtype.name)
+        self._r = np.zeros((DIMS, len(self)), dtype=self._variation.getvalue('dtype'))
+        self._a = np.zeros((DIMS, len(self)), dtype=self._variation.getvalue('dtype'))
+        self._m = np.zeros((len(self),), dtype=self._variation.getvalue('dtype'))
 
         # Copy const data into Numpy infrastructure
         for idx, pm in enumerate(self._masses):
