@@ -29,11 +29,11 @@ dependencies = [
     "numpy",
     "plotly",
     "psutil",
-    "pygame",
+    # "pygame",
     "py-cpuinfo",
     "termplotlib",
     "typeguard",
-    "vispy",
+    # "vispy",
 ]
 classifiers = [
         "Development Status :: 3 - Alpha",
