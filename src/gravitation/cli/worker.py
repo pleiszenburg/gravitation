@@ -134,7 +134,7 @@ def worker(
             sys.exit(1)
 
         _Worker(
-            kernel = kernel.name,  # TODO
+            kernel = kernel.name,
             variation = kernel.variations.selected,
             length = len,
             datafile = datafile,
@@ -199,7 +199,7 @@ class _Worker:
                 universe = (
                     KERNELS[self._kernel].cls.from_hdf5(
                         fn=self._datafile,
-                        gn=KERNELS[self._kernel].cls.export_name_group(kernel = 'zero', length = self._length, steps = 0),  # TODO
+                        gn=KERNELS[self._kernel].cls.export_name_group(kernel = 'zero', length = self._length, steps = 0),
                         variation=self._variation,
                     )
                 )
@@ -301,7 +301,8 @@ class _Worker:
                     kernel=self._kernel,
                     len=len(self._universe),
                     step=self._counter,
-                ),  # TODO
+                    **self._variation.from_dict(),
+                )
             )
         except Exception:
             self._exit(ok = False)
@@ -359,6 +360,7 @@ def worker_command(
     read_initial_state: bool,
     min_iterations: int,
     min_total_runtime: int,
+    **kwargs,  # variation
 ) -> List[str]:
     "returns command list for use with subprocess.Popen"
 
@@ -378,11 +380,13 @@ def worker_command(
         f"{min_iterations:d}",
         "--min_total_runtime",
         f"{min_total_runtime:d}",
-        kernel,
-        # TODO kernel variation
     ]
 
     if read_initial_state:
         cmd.append("--read_initial_state")
+
+    cmd.append(kernel)
+    for key, value in kwargs.items():
+        cmd.extend((f'--{key:s}', str(value)))
 
     return cmd
