@@ -143,9 +143,6 @@ def worker(
             min_total_runtime = min_total_runtime,
         ).run()
 
-        #
-        # kernel.variations.selected
-
     ctx.meta['run'] = run  # runs via kernel sub-command
 
 
