@@ -37,7 +37,7 @@ from typing import Any, Generator, List, Optional, Tuple
 import h5py
 import numpy as np
 
-from .const import State, DIMS
+from .const import State, DEFAULT_LEN, DIMS
 from .debug import typechecked
 from .errors import UniverseError
 from .mass import PointMass
@@ -362,7 +362,7 @@ class BaseUniverse(ABC):
         scale_m: float = 1.0e-30,
         scale_r: float = 1.0e-10,
         variation: Variation = Variation.from_default(),
-        length: int = 2000,
+        length: int = DEFAULT_LEN,
         r: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         v: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         g_alpha: float = 0.0,
