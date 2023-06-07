@@ -33,7 +33,7 @@ from io import TextIOWrapper
 import json
 import shutil
 import sys
-from typing import Generator, List
+from typing import Generator
 
 import termplotlib as tpl
 import click
@@ -62,14 +62,12 @@ class _Processing:
         variation: Variation,
         length: int,
         results: dict,
-        outputs: List[str],
         fh: TextIOWrapper,
         display: str,
     ):
         self._kernel = kernel
         self._length = length
         self._results = results
-        self._outputs = outputs
         self._fh = fh
         self._display = display
 
@@ -91,7 +89,6 @@ class _Processing:
         self._fh.flush()
         if self._display == "log":
             print(line)
-        self._outputs.append(line)
 
         if not self._error_state:
             try:
@@ -274,7 +271,6 @@ def benchmark(
         names = list(kernel)
 
     results = {name: {} for name in names}
-    outputs = []
 
     fh = open(logfile, "w", encoding="utf-8")
 
@@ -315,7 +311,6 @@ def benchmark(
                         variation=variation,
                         length=length,
                         results=results,
-                        outputs=outputs,
                         fh=fh,
                         display=display,
                     ),
