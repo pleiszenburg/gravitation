@@ -49,9 +49,9 @@ try:
 except ModuleNotFoundError:
     GPUtil = None
 
-from ..lib.base import UniverseBase
+from ..lib.baseuniverse import BaseUniverse
 from ..lib.debug import typechecked
-from ..lib.load import inventory
+from ..lib.kernel import KERNELS
 from ..lib.timing import BestRunTimer, ElapsedTimer
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -69,7 +69,7 @@ MAX_TREADS = psutil.cpu_count(logical=True)
 @click.option(
     "--kernel",
     "-k",
-    type=click.Choice(sorted(list(inventory.keys()))),
+    type=click.Choice(sorted(list(KERNELS.keys()))),
     required=True,
     help="name of kernel module",
 )
@@ -191,26 +191,26 @@ class _Worker:
         self._msg_inputs()
         self._universe = self._init_universe()
 
-    def _init_universe(self) -> UniverseBase:
+    def _init_universe(self) -> BaseUniverse:
         self._msg(log="PROCEDURE", msg="Creating simulation ...")
 
-        inventory[self._kernel].load_module()
+        KERNELS[self._kernel].load_module()
 
         try:
             if self._read_initial_state:
                 universe = (
-                    inventory[self._kernel]
+                    KERNELS[self._kernel]
                     .get_class()
                     .from_hdf5(
                         fn=self._datafile,
-                        gn=inventory[self._kernel].get_class().export_name_group(kernel = 'zero', length = self._length, steps = 0),
+                        gn=KERNELS[self._kernel].get_class().export_name_group(kernel = 'zero', length = self._length, steps = 0),
                         threads=self._threads,
                     )
                 )
                 assert self._length == len(universe)
             else:
                 universe = (
-                    inventory[self._kernel]
+                    KERNELS[self._kernel]
                     .get_class()
                     .from_galaxy(
                         length=self._length,
