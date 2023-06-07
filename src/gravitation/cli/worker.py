@@ -301,7 +301,7 @@ class _Worker:
                     kernel=self._kernel,
                     len=len(self._universe),
                     step=self._counter,
-                    **self._variation.from_dict(),
+                    **self._variation.to_dict(),
                 )
             )
         except Exception:
