@@ -36,19 +36,34 @@ __version__ = "0.2.0"
 # EXPORTS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from .lib.base import UniverseBase
+from .lib.baseuniverse import BaseUniverse
+from .lib.baseviewer import BaseViewer
 from .lib.const import (
     State,
     DIMS,
     Dtype,
+    Target,
+    Threads,
     DEFAULT_DTYPE,
+    DEFAULT_TARGET,
+    DEFAULT_THREADS
+)
+from .lib.debug import (
+    DEBUG,
+    typechecked,
 )
 from .lib.errors import (
     BenchmarkLogError,
+    KernelError,
     TimerError,
     UniverseError,
+    VariationError,
+    ViewError,
 )
-from .lib.load import inventory
+from .lib.kernel import (
+    Kernel,
+    KERNELS,
+)
 from .lib.mass import PointMass
 from .lib.shm import (
     ShmPool,
@@ -59,4 +74,13 @@ from .lib.timing import (
     BestRunTimer,
     AverageTimer,
     ElapsedTimer,
+)
+from .lib.variation import (
+    Option,
+    Variation,
+    Variations,
+)
+from .lib.view import (
+    View,
+    VIEWS,
 )
