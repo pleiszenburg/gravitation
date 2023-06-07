@@ -28,59 +28,35 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-import importlib
-import os
+import sys
 
 import click
-import psutil
 
-from ..lib.debug import typechecked
-from ..lib.load import inventory
+from ._kernel import add_kernel_commands
 
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CONST
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-MAX_TREADS = psutil.cpu_count(logical=True)
+from ..lib.errors import VariationError
+from ..lib.kernel import Kernel
+from ..lib.view import VIEWS
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@typechecked
-def _get_backends() -> list[str]:
-    """auto-detects backends"""
-    return sorted(
-        [
-            item[:-3] if item.lower().endswith(".py") else item
-            for item in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'view'))
-            if not item.startswith("_")
-        ]
-    )
-
-
-@click.command(short_help="view a simulation progressing in realtime")
-@click.option(
-    "--kernel",
-    "-k",
-    type=click.Choice(sorted(list(inventory.keys()))),
-    required=True,
-    help="name of kernel module",
-)
+@click.group(short_help="view a simulation progressing in realtime")
 @click.option(
     "--len",
-    default=2000,
+    default=2048,
     type=int,
     show_default=True,
     help="number of point masses",
 )
 @click.option(
-    "--steps_per_frame",
-    default=-1,
+    "--iterations_per_frame",
+    default=1,
     type=int,
     show_default=True,
-    help="simulation steps per frame, use scenario default if -1",
+    help="simulation steps per frame",
 )
 @click.option(
     "--max_iterations",
@@ -90,40 +66,52 @@ def _get_backends() -> list[str]:
     help="maximum number of simulation steps, no maximum if -1",
 )
 @click.option(
-    "--backend",
-    default=_get_backends()[-1],
-    type=click.Choice(_get_backends()),
+    "--timer_buffer",
+    default=20,
+    type=int,
     show_default=True,
-    help="plot backend",
+    help="average time measurements over this many samples",
 )
 @click.option(
-    "--threads",
-    "-p",
-    default="1",
-    type=click.Choice([str(i) for i in range(1, MAX_TREADS + 1)]),
+    "--backend",
+    default=sorted(VIEWS.keys())[-1],
+    type=click.Choice(sorted(VIEWS.keys())),
     show_default=True,
-    help="number of threads/processes for parallel implementations",
+    help="view backend",
 )
+@click.pass_context
 def view(
-    kernel: str,
+    ctx,
     len: int,
-    steps_per_frame: int,
+    iterations_per_frame: int,
     max_iterations: int,
+    timer_buffer: int,
     backend: str,
-    threads: int,
 ):
     """view a simulation progressing in realtime"""
 
-    kwargs = dict(
-        kernel = kernel,
-        threads = int(threads),
-        length = len,
-        steps_per_frame=None if steps_per_frame == -1 else steps_per_frame,
-        max_iterations=None if max_iterations == -1 else max_iterations,
-    )
+    def run(kernel: Kernel, **kwargs):
 
-    viewer = importlib.import_module(
-        f"gravitation.view.{backend:s}"
-    ).Viewer
+        kernel.load_meta()
+        try:
+            kernel.variations.select(**kwargs)
+        except VariationError as e:
+            kernel.variations.print()
+            print('ERROR:', e)
+            sys.exit(1)
 
-    viewer(**kwargs).loop()
+        VIEWS[backend].load_cls()
+        viewer = VIEWS[backend].cls(
+            kernel = kernel.name,
+            length = len,
+            variation = kernel.variations.selected,
+            timer_buffer = timer_buffer,
+            iterations_per_frame = iterations_per_frame,
+            max_iterations = None if max_iterations == -1 else max_iterations,
+        )
+        viewer.run()
+
+    ctx.meta['run'] = run  # runs via kernel sub-command
+
+
+add_kernel_commands(view)
