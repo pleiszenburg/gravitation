@@ -28,25 +28,51 @@ specific language governing rights and limitations under the License.
 # IMPORTS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from enum import Enum as _Enum, auto as _auto
+from enum import (
+    Enum as _Enum,
+    auto as _auto,
+)
+from psutil import cpu_count as _cpu_count
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONSTS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+class Dtype(_Enum):
+    float32 = _auto()
+    float64 = _auto()
 
 class State(_Enum):
     preinit = _auto()
     started = _auto()
     stopped = _auto()
 
-DIMS = 3
-
-class Dtype(_Enum):
-    float32 = _auto()
-    float64 = _auto()
-
-DEFAULT_DTYPE = Dtype.float64
-
 class Stream(_Enum):
     stdout = _auto()
     stderr = _auto()
+
+class Target(_Enum):
+    cpu = _auto()
+    gpu = _auto()
+
+Threads = _Enum('Threads', [
+    ('auto', 0),  # auto
+    ('single', 1),
+    ('physical', _cpu_count(logical = False)),
+    ('logical', _cpu_count(logical = True)),
+    *[
+        (f't{_idx:d}', _idx)
+        for _idx in range(1, _cpu_count(logical = True) + 1)
+    ],
+])
+Threads.modes = lambda: (
+    _item
+    for _item in Threads
+    if not _item.name.startswith('_') and _item is not Threads.auto
+)
+
+DEFAULT_DTYPE = Dtype.float64
+DEFAULT_TARGET = Target.cpu
+DEFAULT_THREADS = Threads.single
+
+DIMS = 3
