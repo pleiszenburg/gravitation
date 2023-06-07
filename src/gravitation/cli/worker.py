@@ -49,30 +49,20 @@ try:
 except ModuleNotFoundError:
     GPUtil = None
 
+from ._kernel import add_kernel_commands
 from ..lib.baseuniverse import BaseUniverse
 from ..lib.debug import typechecked
-from ..lib.kernel import KERNELS
+from ..lib.errors import VariationError
+from ..lib.kernel import Kernel, KERNELS
 from ..lib.timing import BestRunTimer, ElapsedTimer
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CONST
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-MAX_TREADS = psutil.cpu_count(logical=True)
+from ..lib.variation import Variation
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@click.command(short_help="isolated single-kernel benchmark worker")
-@click.option(
-    "--kernel",
-    "-k",
-    type=click.Choice(sorted(list(KERNELS.keys()))),
-    required=True,
-    help="name of kernel module",
-)
+@click.group(short_help="isolated single-kernel benchmark worker")
 @click.option(
     "--len",
     default=2000,
@@ -120,36 +110,46 @@ MAX_TREADS = psutil.cpu_count(logical=True)
     show_default=True,
     help="minimal total runtime of (all) steps, in seconds",
 )
-@click.option(
-    "--threads",
-    "-p",
-    default="1",
-    type=click.Choice([str(i) for i in range(1, MAX_TREADS + 1)]),
-    show_default=True,
-    help="number of threads/processes for parallel implementations",
-)
+@click.pass_context
 def worker(
-    kernel,
+    ctx,
     len,
     datafile,
     save_after_iteration,
     read_initial_state,
     min_iterations,
     min_total_runtime,
-    threads,
 ):
     "isolated single-kernel benchmark worker entry point"
 
-    _Worker(
-        kernel = kernel,
-        length = len,
-        datafile = datafile,
-        save_after_iteration = save_after_iteration,
-        read_initial_state = read_initial_state,
-        min_iterations = min_iterations,
-        min_total_runtime = min_total_runtime,
-        threads = int(threads),
-    ).run()
+    def run(kernel: Kernel, **kwargs):
+
+        kernel.load_meta()
+        try:
+            kernel.variations.select(**kwargs)
+        except VariationError as e:
+            kernel.variations.print()
+            print('ERROR:', e)
+            sys.exit(1)
+
+        _Worker(
+            kernel = kernel.name,  # TODO
+            variation = kernel.variations.selected,
+            length = len,
+            datafile = datafile,
+            save_after_iteration = save_after_iteration,
+            read_initial_state = read_initial_state,
+            min_iterations = min_iterations,
+            min_total_runtime = min_total_runtime,
+        ).run()
+
+        #
+        # kernel.variations.selected
+
+    ctx.meta['run'] = run  # runs via kernel sub-command
+
+
+add_kernel_commands(worker)
 
 
 @typechecked
@@ -159,13 +159,13 @@ class _Worker:
     def __init__(
         self,
         kernel: str,
+        variation: Variation,
         length: int,
         datafile: str,
         save_after_iteration: Tuple[int, ...],
         read_initial_state: bool,
         min_iterations: int,
         min_total_runtime: int,
-        threads: int,
     ):
         self._msg(log="START")
 
@@ -181,7 +181,7 @@ class _Worker:
         ):
             self._min_iterations = max(self._save_after_iteration)
         self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
-        self._threads = threads
+        self._variation = variation
 
         self._counter = 0
         self._rt = BestRunTimer()  # runtime
@@ -194,27 +194,23 @@ class _Worker:
     def _init_universe(self) -> BaseUniverse:
         self._msg(log="PROCEDURE", msg="Creating simulation ...")
 
-        KERNELS[self._kernel].load_module()
+        KERNELS[self._kernel].load_cls()
 
         try:
             if self._read_initial_state:
                 universe = (
-                    KERNELS[self._kernel]
-                    .get_class()
-                    .from_hdf5(
+                    KERNELS[self._kernel].cls.from_hdf5(
                         fn=self._datafile,
-                        gn=KERNELS[self._kernel].get_class().export_name_group(kernel = 'zero', length = self._length, steps = 0),
-                        threads=self._threads,
+                        gn=KERNELS[self._kernel].cls.export_name_group(kernel = 'zero', length = self._length, steps = 0),  # TODO
+                        variation=self._variation,
                     )
                 )
                 assert self._length == len(universe)
             else:
                 universe = (
-                    KERNELS[self._kernel]
-                    .get_class()
-                    .from_galaxy(
+                    KERNELS[self._kernel].cls.from_galaxy(
                         length=self._length,
-                        threads=self._threads,
+                        variation=self._variation,
                     )
                 )
         except Exception:
@@ -233,12 +229,14 @@ class _Worker:
     def _msg_inputs(self):
         self._msg(
             log="INPUT",
+            kernel=dict(
+                name=self._kernel,
+                **self._variation.to_dict(),
+            ),
             simulation=dict(
-                kernel=self._kernel,
                 length=self._length,
                 min_iterations=self._min_iterations,
                 min_total_runtime=self._min_total_runtime,
-                threads=self._threads,
             ),
             python=dict(
                 build=list(platform.python_build()),
@@ -252,8 +250,8 @@ class _Worker:
                 version=platform.version(),
                 machine=platform.machine(),
                 processor=platform.processor(),
-                cores=psutil.cpu_count(logical=False),
-                threads=MAX_TREADS,
+                physical_cores=psutil.cpu_count(logical=False),
+                logical_cores=psutil.cpu_count(logical=True),
                 _cpu=cpuinfo.get_cpu_info() if cpuinfo is not None else {},
                 _gpu=[
                     {
@@ -305,7 +303,7 @@ class _Worker:
                     kernel=self._kernel,
                     len=len(self._universe),
                     step=self._counter,
-                ),
+                ),  # TODO
             )
         except Exception:
             self._exit(ok = False)
@@ -364,7 +362,7 @@ def worker_command(
     read_initial_state: bool,
     min_iterations: int,
     min_total_runtime: int,
-    threads: int,
+    threads: int,  # TODO
 ) -> List[str]:
     "returns command list for use with subprocess.Popen"
 
