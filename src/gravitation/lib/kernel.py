@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/lib/load.py: Kernel loading infrastructure
+    src/gravitation/lib/kernel.py: Kernel loading infrastructure
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -28,149 +28,97 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-import ast
 import importlib
 import os
-from typing import Any, Type
+from typing import List, Type
 
 from .debug import typechecked
+from .errors import KernelError
+from .variation import Variations
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CLASSES
+# CLASS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-class Inventory(dict):
-    """kernel inventory (a dict, more or less)"""
-
-    def __init__(self):
-        super().__init__()
-        path = os.path.join(os.path.dirname(__file__), "..", "kernel")
-        kernels = (
-            item
-            for item in os.listdir(path)
-            if not item.startswith("_")
-        )
-        self.update({name: Kernel(path, name) for name in kernels})
 
 
 @typechecked
 class Kernel:
-    """kernel descriptor with lazy loading of kernel module, class and meta data"""
+    """kernel descriptor with lazy loading of kernel meta data and class"""
 
-    def __init__(self, path: str, name: str):
-        self._path = path
+    def __init__(self, name: str):
         self._name = name
-        self._module = None
-        self._src = None
-        self._meta = None
+
+        self._variations = None  # meta
+        self._description = None  # meta
+        self._requirements = None  # meta
+
+        self._cls = None
 
     def __repr__(self) -> str:
-        return f'<Kernel name={self._name:s} meta={self._meta is not None} module={self._module is not None}>'
+        return f'<Kernel name={self._name:s} meta={self.meta_loaded} cls={self.cls_loaded}>'
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        """provides access to kernel class constructor"""
-        if self._module is None:
-            raise SyntaxError("kernel module has not been loaded")
-        return self._module.universe(*args, **kwargs)
+    @property
+    def meta_loaded(self) -> bool:
+        return self._variations is not None
 
-    def __getitem__(self, key: str) -> Any:
-        """provides access to kernel meta data dict"""
-        if self._meta is None:
-            raise SyntaxError("kernel metadata has not been loaded")
-        return self._meta[key]
+    @property
+    def cls_loaded(self) -> bool:
+        return self._cls is not None
 
-    def get_class(self) -> Type:
-        """returns kernel class"""
-        if self._module is None:
-            raise SyntaxError("kernel module has not been loaded")
-        return self._module.Universe
+    @property
+    def name(self) -> str:
+        """kernel name"""
+        return self._name
+
+    @property
+    def variations(self) -> Variations:
+        """kernel variations"""
+        if not self.meta_loaded:
+            raise KernelError("kernel meta data has not been loaded")
+        return self._variations
+
+    @property
+    def description(self) -> str:
+        """kernel description"""
+        if not self.meta_loaded:
+            raise KernelError("kernel meta data has not been loaded")
+        return self._description
+
+    @property
+    def requirements(self) -> List[str]:
+        """kernel requirements"""
+        if not self.meta_loaded:
+            raise KernelError("kernel meta data has not been loaded")
+        return self._requirements
+
+    @property
+    def cls(self) -> Type:
+        """kernel class"""
+        if not self.cls_loaded:
+            raise KernelError("kernel class has not been loaded")
+        return self._cls
 
     def load_meta(self):
-        """loads meta data from kernel without importing it"""
-        with open(
-            os.path.join(self._path, self._name, "__init__.py"),
-            mode="r",
-            encoding="utf-8",
-        ) as f:
-            self._src = f.read()
-        self._meta = {
-            k[2:-2]: v
-            for k, v in _get_vars(
-                self._src,
-                *[
-                    f"__{item:s}__"
-                    for item in (
-                        "longname",
-                        "version",
-                        "description",
-                        "requirements",
-                        "externalrequirements",
-                        "interpreters",
-                        "parallel",
-                        "license",
-                        "authors",
-                    )
-                ],
-            ).items()
-        }
-        self._meta["name"] = self._name
+        """loads meta data from kernel without class or dependencies"""
+        if self.meta_loaded:
+            return
+        module = importlib.import_module(f"gravitation.kernel.{self._name:s}")
+        self._variations = module.VARIATIONS
+        self._description = module.DESCRIPTION
+        self._requirements = module.REQUIREMENTS
 
-    def load_module(self):
-        """actually imports kernel module"""
-        self._module = importlib.import_module(f"gravitation.kernel.{self._name:s}.kernel")
-
-    def keys(self):
-        """provides access to kernel meta data dict keys"""
-        if self._meta is None:
-            raise SyntaxError("kernel metadata has not been loaded")
-        return self._meta.keys()
-
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# ROUTINES
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-@typechecked
-def _get_vars(src, *names: str, default: Any = None) -> dict:
-    tree = ast.parse(src)
-    out = {name: default for name in names}
-    for item in tree.body:
-        if not isinstance(item, ast.Assign):
-            continue
-        for target in item.targets:
-            if target.id not in names:
-                continue
-            out[target.id] = _parse_tree(item.value)
-    return out
-
-
-@typechecked
-def _parse_tree(leaf: Any) -> Any:
-    if isinstance(leaf, ast.Str) or isinstance(leaf, ast.Bytes):
-        return leaf.s
-    elif isinstance(leaf, ast.Num):
-        return leaf.n
-    elif isinstance(leaf, ast.NameConstant):
-        return leaf.value
-    elif isinstance(leaf, ast.Dict):
-        return {
-            _parse_tree(leaf_key): _parse_tree(leaf_value)
-            for leaf_key, leaf_value in zip(leaf.keys, leaf.values)
-        }
-    elif isinstance(leaf, ast.List):
-        return [_parse_tree(leaf_item) for leaf_item in leaf.elts]
-    elif isinstance(leaf, ast.Tuple):
-        return tuple([_parse_tree(leaf_item) for leaf_item in leaf.elts])
-    elif isinstance(leaf, ast.Set):
-        return {_parse_tree(leaf_item) for leaf_item in leaf.elts}
-    else:
-        raise SyntaxError(f"unhandled type: {str(leaf):s} ({str(dir(leaf)):s})")
-
+    def load_cls(self):
+        """actually imports kernel class and its dependencies"""
+        if self.cls_loaded:
+            return
+        self._cls = importlib.import_module(f"gravitation.kernel.{self._name:s}.kernel").Universe
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # EXPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-inventory = Inventory()
+KERNELS = {
+    name: Kernel(name)
+    for name in os.listdir(os.path.join(os.path.dirname(__file__), "..", "kernel"))
+    if not name.startswith("_")
+}
