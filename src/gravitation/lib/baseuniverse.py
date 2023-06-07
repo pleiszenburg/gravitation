@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/lib/base.py: Base class, all kernels derive from it
+    src/gravitation/lib/baseuniverse.py: Universe base class, all kernels derive from it
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -37,15 +37,11 @@ from typing import Any, Generator, List, Optional, Tuple
 import h5py
 import numpy as np
 
-from .const import (
-    State,
-    DIMS,
-    Dtype,
-    DEFAULT_DTYPE,
-)
+from .const import State, DIMS
 from .debug import typechecked
 from .errors import UniverseError
 from .mass import PointMass
+from .variation import Variation
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASS
@@ -53,7 +49,7 @@ from .mass import PointMass
 
 
 @typechecked
-class UniverseBase(ABC):
+class BaseUniverse(ABC):
     """
     kernel base class, provides infrastructure, does nothing on its own
     DERIVE FROM HERE!
@@ -66,8 +62,7 @@ class UniverseBase(ABC):
         "t",
         "T",
         "G",
-        "dtype",
-        "threads",
+        "variation",
     )
 
     def __init__(
@@ -77,8 +72,7 @@ class UniverseBase(ABC):
         G: float = 6.6740831e-11,  # gravitational constant
         scale_m: float = 1.0,  # scaling factor for mass (for kg)
         scale_r: float = 1.0,  # scaling factor for distances (for m)
-        dtype: Dtype = DEFAULT_DTYPE,  # datatype for numerical computations
-        threads: int = 1,  # maximum number of threads
+        variation: Variation = Variation.from_default(),  # default variation
         scaled: bool = False,
         **kwargs: Any,  # catch anything else
     ):
@@ -86,7 +80,6 @@ class UniverseBase(ABC):
         assert G > 0
         assert scale_m > 0
         assert scale_r > 0
-        assert threads > 0
 
         self._scale_m = scale_m
         self._scale_r = scale_r
@@ -95,8 +88,7 @@ class UniverseBase(ABC):
         self._G = G * (self._scale_r**3) / self._scale_m if not scaled else G
         self._masses = []
         self._state = State.preinit
-        self._dtype = dtype
-        self._threads = threads
+        self._variation = variation
         self._meta = kwargs
 
     def __iter__(self) -> Generator:
@@ -106,7 +98,7 @@ class UniverseBase(ABC):
         return len(self._masses)
 
     def __repr__(self) -> str:
-        return f"<Universe len={len(self):d} dtype={self._dtype.name:s}>"
+        return f"<Universe len={len(self):d} variation={str(self._variation.to_dict()):s}>"
 
     @property
     def G(self) -> float:
@@ -145,9 +137,9 @@ class UniverseBase(ABC):
         create point mass object and add to universe
         """
 
-        if self._state == State.started:
+        if self._state is State.started:
             raise UniverseError("simulation was started")
-        if self._state == State.stopped:
+        if self._state is State.stopped:
             raise UniverseError("simulation was stopped")
 
         if not scaled:
@@ -170,9 +162,9 @@ class UniverseBase(ABC):
         MUST BE CALLED ONCE: AFTER ADDING OBJECTS AND BEFORE STEPPING!
         """
 
-        if self._state == State.started:
+        if self._state is State.started:
             raise UniverseError("simulation is running")
-        if self._state == State.stopped:
+        if self._state is State.stopped:
             raise UniverseError("simulation was stopped")
 
         self._state = State.started
@@ -189,9 +181,9 @@ class UniverseBase(ABC):
         runs all three stages of one simulation (time-) step
         """
 
-        if self._state == State.preinit:
+        if self._state is State.preinit:
             raise UniverseError("simulation was not started")
-        if self._state == State.stopped:
+        if self._state is State.stopped:
             raise UniverseError("simulation was stopped")
 
         if stage1:
@@ -254,9 +246,9 @@ class UniverseBase(ABC):
         stops simulation
         CAN BE CALLED ONCE: AFTER STEPPING!
         """
-        if self._state == State.preinit:
+        if self._state is State.preinit:
             raise UniverseError("simulation was not started")
-        if self._state == State.stopped:
+        if self._state is State.stopped:
             raise UniverseError("simulation was stopped before")
 
         self._state = State.stopped
@@ -285,7 +277,7 @@ class UniverseBase(ABC):
             raise ValueError("hdf5 group under this name already exists", fn, gn)
         dg = f.create_group(gn)
 
-        dtype = dict(float32 = '<f4', float64 = '<f8')[self._dtype.name]
+        dtype = dict(float32 = '<f4', float64 = '<f8')[self._variation.getvalue('dtype')]
 
         r = dg.create_dataset("r", (len(self), DIMS), dtype=dtype)
         v = dg.create_dataset("v", (len(self), DIMS), dtype=dtype)
@@ -308,8 +300,8 @@ class UniverseBase(ABC):
 
         for attr in self._ATTRS:
             value = getattr(self, f"_{attr:s}")
-            if attr == 'dtype':
-                value = value.name
+            if attr == 'variation':
+                value = value.to_json()
             dg.attrs[attr] = value
         for k, v in self._meta.items():
             dg.attrs[k] = v
@@ -317,7 +309,7 @@ class UniverseBase(ABC):
         f.close()
 
     @classmethod
-    def from_hdf5(cls, fn: str, gn: str, threads: Optional[int] = None):
+    def from_hdf5(cls, fn: str, gn: str, variation: Optional[Variation] = None):
         """loads simulation from HDF5 file into object generated from kernel class"""
 
         f = h5py.File(fn, "r")
@@ -328,10 +320,11 @@ class UniverseBase(ABC):
         dg = f[gn]
 
         kwargs = {attr: dg.attrs[attr] for attr in dg.attrs.keys()}
-        if isinstance(threads, int):
-            kwargs["threads"] = threads
-        if 'dtype' in kwargs.keys():
-            kwargs['dtype'] = getattr(Dtype, kwargs['dtype'])
+
+        if variation is not None:
+            kwargs['variation'] = variation
+        else:
+            kwargs['variation'] = Variation.from_json(kwargs['variation'])
 
         universe = cls(scaled=True, **kwargs)
 
@@ -368,8 +361,7 @@ class UniverseBase(ABC):
         T: float = 2.0e12,
         scale_m: float = 1.0e-30,
         scale_r: float = 1.0e-10,
-        dtype: Dtype = DEFAULT_DTYPE,
-        threads: int = 1,
+        variation: Variation = Variation.from_default(),
         length: int = 2000,
         r: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         v: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -387,12 +379,7 @@ class UniverseBase(ABC):
             T=T,
             scale_m=scale_m,
             scale_r=scale_r,
-            dtype=dtype,
-            threads=threads,
-            unit=1e20,  # m (meta)
-            unit_size=[16.0, 10.0],  # units (meta)
-            average_over_steps=20,  # (meta)
-            steps_per_frame=1,  # (meta)
+            variation=variation,
         )
 
         universe.create_mass(
