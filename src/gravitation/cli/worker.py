@@ -359,15 +359,12 @@ def worker_command(
     read_initial_state: bool,
     min_iterations: int,
     min_total_runtime: int,
-    threads: int,  # TODO
 ) -> List[str]:
     "returns command list for use with subprocess.Popen"
 
     cmd = [
         "gravitation",
         "worker",
-        "--kernel",
-        kernel,
         "--len",
         f"{length:d}",
         "--datafile",
@@ -381,8 +378,8 @@ def worker_command(
         f"{min_iterations:d}",
         "--min_total_runtime",
         f"{min_total_runtime:d}",
-        "--threads",
-        f"{threads:d}",
+        kernel,
+        # TODO kernel variation
     ]
 
     if read_initial_state:

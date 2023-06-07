@@ -63,7 +63,6 @@ class _Processing:
     def __init__(
         self,
         kernel: str,
-        threads: int,
         length: int,
         results: dict,
         outputs: List[str],
@@ -71,7 +70,6 @@ class _Processing:
         display: str,
     ):
         self._kernel = kernel
-        self._threads = threads
         self._length = length
         self._results = results
         self._outputs = outputs
@@ -110,7 +108,7 @@ class _Processing:
         if msg["log"] == "STEP":
             self._counter = msg["counter"]
 
-        bests = self._results[self._kernel][self._threads]
+        bests = self._results[self._kernel]
         if msg["log"] == "BEST_TIME":
             if self._length not in bests.keys():
                 bests[self._length] = msg["value"]
@@ -131,7 +129,7 @@ class _Processing:
         fig.plot(
             x,
             y,
-            label=f"{self._kernel:s} / t={self._threads:d} / n={self._length:d} / i={self._counter:d} / b={y[-1]*1e-9:.02e}s",
+            label=f"{self._kernel:s} / n={self._length:d} / i={self._counter:d} / b={y[-1]*1e-9:.02e}s",
             width=t.columns,
             height=t.lines,
             extra_gnuplot_arguments=[
@@ -244,16 +242,6 @@ class _UniverseZero(BaseUniverse):
     show_default=True,
     help="what to show during benchmark",
 )
-@click.option(
-    "--threads",
-    "-p",
-    type=click.Choice([str(i) for i in range(1, MAX_TREADS + 1)]),
-    multiple=True,
-    help=(
-        "number of threads/processes for parallel implementations, "
-        "can be specified multiple times, defaults to maximum number of available threads"
-    ),
-)
 def benchmark(
     logfile,
     datafile,
@@ -265,7 +253,6 @@ def benchmark(
     min_iterations,
     min_total_runtime,
     display,
-    threads,
 ):
     """run a benchmark across kernels"""
 
@@ -274,10 +261,8 @@ def benchmark(
     else:
         names = list(kernel)
 
-    threads = [MAX_TREADS] if len(threads) == 0 else sorted([int(n) for n in threads])
-
     results = {
-        name: {threads_num: dict() for threads_num in range(1, MAX_TREADS + 1)}
+        name: {}
         for name in names
     }
     outputs = []
@@ -301,30 +286,26 @@ def benchmark(
         KERNELS[name].load_meta()
         parallel = KERNELS[name]["parallel"]
         parallel = parallel if isinstance(parallel, bool) else False
-        threads_iterator = threads if parallel else [1]
 
-        for threads_num in threads_iterator:
-            for length in _range(*len_range):
-                run_command(
-                    worker_command(
-                        datafile=datafile,
-                        kernel=name,
-                        length=length,
-                        save_after_iteration=save_after_iteration,
-                        read_initial_state=common_initial_state,
-                        min_iterations=min_iterations,
-                        min_total_runtime=min_total_runtime,
-                        threads=threads_num,
-                    ),
-                    unbuffer=True,
-                    processing=_Processing(
-                        kernel=name,
-                        threads=threads_num,
-                        length=length,
-                        results=results,
-                        outputs=outputs,
-                        fh=fh,
-                        display=display,
-                    ),
-                )
-                fh.flush()
+        for length in _range(*len_range):
+            run_command(
+                worker_command(
+                    datafile=datafile,
+                    kernel=name,
+                    length=length,
+                    save_after_iteration=save_after_iteration,
+                    read_initial_state=common_initial_state,
+                    min_iterations=min_iterations,
+                    min_total_runtime=min_total_runtime,
+                ),
+                unbuffer=True,
+                processing=_Processing(
+                    kernel=name,
+                    length=length,
+                    results=results,
+                    outputs=outputs,
+                    fh=fh,
+                    display=display,
+                ),
+            )
+            fh.flush()
