@@ -28,8 +28,9 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+from enum import Enum
 from json import dumps, loads
-from typing import Any, Generator, Optional, Tuple
+from typing import Any, Generator, Optional, Tuple, Type
 
 from .const import (
     Dtype,
@@ -65,10 +66,34 @@ class Option:
     def __contains__(self, choice: Any) -> bool:
         return choice in self._choices
 
+    @property
+    def name(self) -> str:
+        "name of option"
+        return self._name
+
+    @property
+    def type(self) -> Type:
+        "type of option"
+        return self._type
+
+    @property
+    def choices(self) -> Tuple[Any]:
+        "all choices of option, sorted; stripped if enum"
+        return tuple(sorted(
+            getattr(choice, 'name', choice)
+            for choice in self._choices
+        ))
+
     def add(self, choice: Any):
+        "add choice"
         if not isinstance(choice, self._type):
             raise TypeError('wrong choice type for option')
         self._choices.add(choice)
+
+    def value_to_type(self, value: Any) -> Any:
+        if issubclass(self._type, Enum):
+            return self._type[value]
+        return self._type(value)
 
 
 @typechecked
@@ -103,6 +128,8 @@ class Variation:
         return len(self._ENUMS) + len(self._meta)
 
     def __getitem__(self, field: str) -> Any:
+        if field in (enum.__name__.lower() for enum in self._ENUMS):
+            return getattr(self, f'_{field:s}')
         return self._meta[field]
 
     def __eq__(self, other: Any) -> bool:
@@ -112,7 +139,7 @@ class Variation:
 
     @property
     def key(self) -> Tuple[str, ...]:
-        return (self[field] for field in self.keys())
+        return tuple(self[field] for field in self.keys())
 
     def keys(self) -> Generator:
         yield from (enum.__name__.lower() for enum in self._ENUMS)
@@ -125,9 +152,9 @@ class Variation:
         return {field: self.getvalue(field) for field in self.keys()}
 
     def getvalue(self, field: str) -> Any:
-        if field not in (enum.__name__.lower() for enum in self._ENUMS):
-            return self[field]
-        return self[field].name
+        if field in (enum.__name__.lower() for enum in self._ENUMS):
+            return self[field].name
+        return self[field]
 
     @classmethod
     def from_json(cls, raw: str):
@@ -171,26 +198,44 @@ class Variations:
         return variation.key in self._variations.keys()
 
     def add(self, variation: Variation):
+        "add variation"
         self._variations[variation.key] = variation
+
+    def select(self, **kwargs):
+        "match given set of options against available variations and select matching variation"
+        options = {option.name: option for option in self.to_options()}
+        for key, value in kwargs.items():
+            if key not in options.keys():
+                raise VariationError('argument not part of available options', key, value)
+            kwargs[key] = options[key].value_to_type(value)
+        self.selected = Variation(**kwargs)
+
+    def print(self):
+        "print all variations"
+        print('The following variations are available:')
+        for idx, variation in enumerate(self, start = 1):
+            print(f'- {idx:d}: {repr(variation):s}')
 
     def to_options(self) -> Tuple[Option, ...]:
         options = {}
         for variation in self:
             for field in variation.keys():
                 if field in options.keys():
-                    options[field].add(variation.getvalue(field))
+                    options[field].add(variation[field])
                 else:
-                    options[field] = Option(field, variation.getvalue(field))
+                    options[field] = Option(field, variation[field])
         return tuple(options.values())
 
     @property
     def selected(self) -> Variation:
+        "currently selected variation"
         if self._selected is None:
             raise VariationError('no variation selected')
         return self._selected
 
     @selected.setter
     def selected(self, variation: Variation):
+        "currently selected variation"
         if variation not in self:
-            raise VariationError('variation can not be selected, not part of possible variations')
+            raise VariationError('variation can not be selected, not part of available variations', variation)
         self._selected = variation
