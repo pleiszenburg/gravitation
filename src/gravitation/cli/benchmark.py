@@ -157,15 +157,12 @@ class _Processing:
 @typechecked
 def _range(start: int, stop: int) -> Generator:
     """special range generator, going from 2^start to 2^stop with some interpolation"""
-    assert start <= stop
-    state = start
-    while True:
-        value = 2**state
-        yield value
-        if state == stop:
-            break
-        yield value + value // 2
-        state += 1
+    if start > stop:
+        raise ValueError()
+    for value in range(start, stop):
+        yield 2 ** value
+        yield round(2 ** (value + 0.5))
+    yield 2 ** stop
 
 
 @typechecked
