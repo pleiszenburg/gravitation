@@ -60,16 +60,16 @@ class _Processing:
         self,
         kernel: str,
         variation: Variation,
-        length: int,
         results: dict,
+        length: int,
         fh: TextIOWrapper,
         display: str,
     ):
         self._kernel = kernel
         self._length = length
-        self._results = results
         self._fh = fh
         self._display = display
+        self._results = results
 
         self._variation = variation
         variation = variation.to_dict()
@@ -107,22 +107,19 @@ class _Processing:
         if msg["log"] == "STEP":
             self._counter = msg["counter"]
 
-        bests = self._results[self._kernel]
         if msg["log"] == "BEST_TIME":
-            if self._length not in bests.keys():
-                bests[self._length] = msg["value"]
-            elif bests[self._length] > msg["value"]:
-                bests[self._length] = msg["value"]
-            else:
-                return
+            if self._length not in self._results.keys():
+                self._results[self._length] = msg["value"]
+            elif self._results[self._length] > msg["value"]:
+                self._results[self._length] = msg["value"]
         else:
             return
 
-        if self._display != "plot":
+        if self._display != "plot" or len(self._results) == 0:
             return
 
-        x = sorted(list(bests.keys()))
-        y = [bests[n]*1e-9 for n in x]
+        x = sorted(list(self._results.keys()))
+        y = [self._results[n]*1e-9 for n in x]
         t = shutil.get_terminal_size((80, 20))
 
         label = " / ".join([
@@ -151,17 +148,28 @@ class _Processing:
 
 
 @typechecked
-def _range(start: int, end: int) -> Generator:
-    """special range generator, going from 2^start to 2^end with some interpolation"""
-    assert start <= end
+def _range(start: int, stop: int) -> Generator:
+    """special range generator, going from 2^start to 2^stop with some interpolation"""
+    assert start <= stop
     state = start
     while True:
         value = 2**state
         yield value
-        if state == end:
+        if state == stop:
             break
         yield value + value // 2
         state += 1
+
+
+@typechecked
+def _common_initial_states(start: int, stop: int, datafile: int):
+    """create common initial states for benchmarks for later evaluation of results"""
+    for length in _range(start, stop):
+        print(
+            f"Creating initial state for {length:d} masses (max {2**stop:d}) ..."
+        )
+        initial_state = _UniverseZero.from_galaxy(length=length)
+        initial_state.to_hdf5(fn=datafile, gn=_UniverseZero.export_name_group(kernel = "zero", length = length, steps = 0))
 
 
 @typechecked
@@ -265,32 +273,28 @@ def benchmark(
 ):
     """run a benchmark across kernels"""
 
-    if all_kernels:
-        names = sorted(list(KERNELS.keys()))
-    else:
-        names = list(kernel)
+    names = sorted(list(KERNELS.keys())) if all_kernels else list(kernel)
 
-    results = {name: {} for name in names}
+    if common_initial_state:
+        _common_initial_states(*len_range, datafile)
 
     fh = open(logfile, "w", encoding="utf-8")
 
     def shutdown():
         fh.close()
-    atexit.register(shutdown)
 
-    if common_initial_state:
-        for length in _range(*len_range):
-            print(
-                f"Creating initial state for {length:d} masses (max {2**len_range[1]:d}) ..."
-            )
-            initial_state = _UniverseZero.from_galaxy(length=length)
-            initial_state.to_hdf5(fn=datafile, gn=_UniverseZero.export_name_group(kernel = "zero", length = length, steps = 0))
+    atexit.register(shutdown)
 
     for name in names:
 
         KERNELS[name].load_meta()
 
         for variation in KERNELS[name].variations:
+
+            if variation['threads'].name.startswith('t'):
+                continue
+
+            results = {}
 
             for length in _range(*len_range):
 
@@ -309,8 +313,8 @@ def benchmark(
                     processing=_Processing(
                         kernel=name,
                         variation=variation,
-                        length=length,
                         results=results,
+                        length=length,
                         fh=fh,
                         display=display,
                     ),
