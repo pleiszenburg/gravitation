@@ -25,22 +25,6 @@ specific language governing rights and limitations under the License.
 """
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# KERNEL META
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-__longname__ = "c-backend 2"
-__version__ = "0.1.0"
-__description__ = "plain C-core, ctypes-interface"
-__requirements__ = []
-__externalrequirements__ = ["gcc"]
-__interpreters__ = ["python3"]
-__parallel__ = False
-__license__ = "GPLv2"
-__authors__ = [
-    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
-]
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -48,8 +32,9 @@ import ctypes
 import os
 import sysconfig
 
-from ...lib.base import UniverseBase
-from ...lib.debug import typechecked
+from gravitation import BaseUniverse, typechecked
+
+from . import DESCRIPTION
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -57,8 +42,8 @@ from ...lib.debug import typechecked
 
 
 @typechecked
-class Universe(UniverseBase):
-    __doc__ = __description__
+class Universe(BaseUniverse):
+    __doc__ = DESCRIPTION
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -70,7 +55,7 @@ class Universe(UniverseBase):
     def start_kernel(self):
         cdtype = getattr(
             ctypes,
-            f"c_{dict(float32 = 'float', float64 = 'double')[self._dtype.name]:s}",
+            f"c_{dict(float32 = 'float', float64 = 'double')[self._variation.getvalue('dtype')]:s}",
         )
         array_fields = ["rx", "ry", "rz", "ax", "ay", "az", "m"]
         array_type = cdtype * len(self)
@@ -86,7 +71,7 @@ class Universe(UniverseBase):
         lib = ctypes.cdll.LoadLibrary(
             os.path.join(os.path.dirname(__file__), f"lib.{sysconfig.get_config_var('SOABI')}.so")
         )
-        suffix = dict(float32 = 'f4', float64 = 'f8')[self._dtype.name]
+        suffix = dict(float32 = 'f4', float64 = 'f8')[self._variation.getvalue('dtype')]
 
         univ_alloc_c = getattr(lib, f'univ_alloc_{suffix:s}')
         univ_alloc_c.argtypes = (ctypes.POINTER(Univ),)
