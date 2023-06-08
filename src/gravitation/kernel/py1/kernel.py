@@ -30,13 +30,13 @@ specific language governing rights and limitations under the License.
 
 import math
 
-from . import DESCRIPTION
-
 from gravitation import BaseUniverse
 from gravitation import Dtype
 from gravitation import typechecked
 from gravitation import VariationError
 from gravitation import PointMass
+
+from . import DESCRIPTION
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
