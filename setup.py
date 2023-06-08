@@ -28,119 +28,52 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import importlib
 import os
+import sys
 
-from setuptools import (
-    Extension,
-    setup,
-)
-from Cython.Build import cythonize
+from setuptools import setup
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # SETUP
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# Define source directory (path)
-SRC_DIR = "src"
 
-# Prepare list of extension modules (C ...)
-ext_modules = cythonize(
-    [
-        # Extension(
-        #     "gravitation.kernel.cy1.core",
-        #     [os.path.join(SRC_DIR, "gravitation", "kernel", "cy1", "core.pyx")],
-        # ),
-        # Extension(
-        #     "gravitation.kernel.cy2.core",
-        #     [os.path.join(SRC_DIR, "gravitation", "kernel", "cy2", "core.pyx")],
-        # ),
-        # Extension(
-        #     "gravitation.kernel.cy4.core",
-        #     [os.path.join(SRC_DIR, "gravitation", "kernel", "cy4", "core.pyx")],
-        #     extra_compile_args=["-fopenmp"],
-        #     extra_link_args=["-fopenmp"],
-        # ),
-    ],
-    annotate=True,
-) + [
-    Extension(
-        "gravitation.kernel.cc1.lib",
-        [os.path.join(SRC_DIR, "gravitation", "kernel", "cc1", "lib.c")],
-        extra_compile_args=[
-            "-std=gnu11",
-            "-fPIC",
-            "-O3",
-            # "-ffast-math",
-            "-march=native",
-            "-mtune=native",
-            "-mfpmath=sse",
-            "-Wall",
-            "-Wdouble-promotion",
-            "-Winline",
-            "-Werror",
-        ],
-        extra_link_args=["-lm"],
-    ),
-    Extension(
-        "gravitation.kernel.cc2.lib",
-        [os.path.join(SRC_DIR, "gravitation", "kernel", "cc2", "lib.c")],
-        extra_compile_args=[
-            "-std=gnu11",
-            "-fPIC",
-            "-O3",
-            # "-ffast-math",
-            "-march=native",
-            "-mtune=native",
-            "-mfpmath=sse",
-            "-Wall",
-            "-Wdouble-promotion",
-            "-Winline",
-            "-Werror",
-        ],
-        extra_link_args=["-lm"],
-    ),
-    Extension(
-        "gravitation.kernel.cc3.lib",
-        [os.path.join(SRC_DIR, "gravitation", "kernel", "cc3", "lib.c")],
-        extra_compile_args=[
-            "-std=gnu11",
-            "-fPIC",
-            "-O3",
-            # "-ffast-math",
-            "-march=native",
-            "-mtune=native",
-            "-mfpmath=sse",
-            "-Wall",
-            "-Wdouble-promotion",
-            "-Winline",
-            "-Werror",
-            "-mavx2",  # !!!
-        ],
-        extra_link_args=["-lm"],
-    ),
-    # Extension(
-    #     "gravitation.kernel._lib4_.lib",
-    #     [os.path.join(SRC_DIR, "gravitation", "kernel", "_lib4_", "lib.c")],
-    #     extra_compile_args=[
-    #         "-std=gnu11",
-    #         "-fPIC",
-    #         "-O3",
-    #         "-ffast-math",
-    #         "-march=native",
-    #         "-mtune=native",
-    #         "-mfpmath=sse",
-    #         "-fopenmp",
-    #         "-Wall",
-    #         "-Wdouble-promotion",
-    #         "-Winline",
-    #         "-Wno-maybe-uninitialized",
-    #         "-Werror",
-    #     ],
-    #     extra_link_args=["-lm", "-fopenmp"],
-    # ),
-]
+class _DiscoveryError(Exception):
+    pass
 
 
-setup(
-    ext_modules=ext_modules,
-)
+def _discover_ext_modules_in_kernel(kernel: str) -> list:
+    "discover ext modules in kernel"
+
+    try:
+        module = importlib.import_module(f"{kernel:s}.setup")
+    except ModuleNotFoundError as e:
+        raise _DiscoveryError() from e
+
+    try:
+        ext_modules = module.EXTENTIONS
+    except AttributeError as e:
+        raise _DiscoveryError() from e
+
+    return ext_modules
+
+
+def _discover_ext_modules() -> list:
+    "go through all kernels and discover ext modules"
+
+    path = os.path.join(os.path.dirname(__file__), "src", "gravitation", "kernel")
+    sys.path.insert(0, path)  # HACK
+
+    ext_modules = []
+
+    for kernel in os.listdir(path):
+        try:
+            ext_modules.extend(_discover_ext_modules_in_kernel(kernel))
+        except _DiscoveryError:
+            pass
+
+    return ext_modules
+
+
+setup(ext_modules=_discover_ext_modules())
