@@ -65,14 +65,16 @@ def _parse_itemstr_to_itemdict(raw: str) -> dict:
 
     errors = [line for line in lines if line["log"] == "JSON_ERROR"]
     if len(errors) != 0:
-        for idx, error in enumerate(errors):
-            print(f"=== ERROR {idx+1:d} ===")
+        for idx, error in enumerate(errors, start = 1):
+            print(f"=== ERROR {idx:d} ===")
             print(error["str"])
         raise BenchmarkLogError("benchmark log has non-JSON components, likely errors")
 
     errors = [line for line in lines if line["log"] == "ERROR"]
     if len(errors) != 0:
-        print(errors)
+        for idx, error in enumerate(errors, start = 1):
+            print(f"\n=== ERROR {idx:d} ===")
+            print(error['msg'])
         raise BenchmarkLogError("benchmark has errors")
 
     input_ = [line for line in lines if line["log"] == "INPUT"]
@@ -109,11 +111,35 @@ def _parse_itemstr_to_itemdict(raw: str) -> dict:
 @typechecked
 def _parse_logstr_to_datalist(log: str) -> List[dict]:
     """parse a benchmark log consisting of multiple worker runs to list of dict"""
-    return [
-        _parse_itemstr_to_itemdict(item)
-        for item in log.split('{"log": "START"}\n')
-        if item.strip() != ""
-    ]
+
+    results = []
+
+    for benchmark in log.split('{"log": "START"}\n'):
+
+        if len(benchmark.strip()) == 0:
+            continue
+
+        try:
+            result = _parse_itemstr_to_itemdict(benchmark)
+        except BenchmarkLogError as e:
+            print('-> BAD RESULT', e)
+            continue
+
+        variation = [
+            f"{key:s}={result['meta']['kernel'][key]:s}"
+            for key in sorted(result['meta']['kernel'].keys())
+        ]
+        label = " / ".join([
+            f"kernel={result['meta']['kernel']['name']:s}",
+            *variation,
+            f"implementation={result['meta']['python']['implementation']:s}",
+            f"len={result['meta']['simulation']['length']:d}",
+        ])
+
+        print(f'-> GOOD RESULT: {label:s}')
+        results.append(result)
+
+    return results
 
 
 @click.command(short_help="analyze benchmark logfile")
