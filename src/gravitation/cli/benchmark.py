@@ -82,13 +82,20 @@ class _Processing:
 
     def __call__(
         self,
-        stream_id: Stream,
+        stream_id: Stream,  # TODO handle err (warnings)
         line: str,
     ):
+
+        if stream_id is Stream.stderr:
+            line = json.dumps({"log": "stderr", "value": line})
+
         self._fh.write(f"{line:s}\n")
         self._fh.flush()
+
         if self._display == "log":
             print(line)
+        if stream_id is Stream.stderr:
+            return
 
         if not self._error_state:
             try:
