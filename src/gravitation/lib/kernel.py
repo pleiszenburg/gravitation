@@ -102,7 +102,7 @@ class Kernel:
         """loads meta data from kernel without class or dependencies"""
         if self.meta_loaded:
             return
-        module = importlib.import_module(f"gravitation.kernel.{self._name:s}")
+        module = importlib.import_module(f"gravitation.kernel.{self._name:s}.meta")
         self._variations = module.VARIATIONS
         self._description = module.DESCRIPTION
         self._requirements = module.REQUIREMENTS
