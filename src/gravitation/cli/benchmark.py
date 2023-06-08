@@ -213,13 +213,6 @@ class _UniverseZero(BaseUniverse):
     help="use common initial state per length for all kernels",
 )
 @click.option(
-    "--kernel",
-    "-k",
-    type=click.Choice(sorted(list(KERNELS.keys()))),
-    multiple=True,
-    help="name of kernel module, can be specified multiple times",
-)
-@click.option(
     "--all_kernels",
     "-a",
     is_flag=True,
@@ -266,17 +259,22 @@ class _UniverseZero(BaseUniverse):
     show_default=True,
     help="what to show during benchmark",
 )
+@click.argument(
+    "kernel",
+    type=click.Choice(sorted(list(KERNELS.keys()))),
+    nargs=-1,
+)
 def benchmark(
     logfile,
     datafile,
     common_initial_state,
-    kernel,
     all_kernels,
     len_range,
     save_after_iteration,
     min_iterations,
     min_total_runtime,
     display,
+    kernel,
 ):
     """run a benchmark across kernels"""
 
