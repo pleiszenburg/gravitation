@@ -28,16 +28,14 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from math import sqrt
-
 import numba as nb
 import numpy as np
-
-from . import DESCRIPTION, VARIATIONS
 
 from gravitation import BaseUniverse
 from gravitation import DIMS, Target, Threads
 from gravitation import typechecked
+
+from . import DESCRIPTION, VARIATIONS
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONFIG
@@ -70,7 +68,7 @@ def _step_stage1_guv(r, m, g, a):
             relative_x = r[0, idx] - r[0, jdx]
             relative_y = r[1, idx] - r[1, jdx]
             relative_z = r[2, idx] - r[2, jdx]
-            distance_inv = 1 / sqrt(relative_x ** 2 + relative_y ** 2 + relative_z ** 2)
+            distance_inv = 1 / np.sqrt(relative_x ** 2 + relative_y ** 2 + relative_z ** 2)
             relative_x *= distance_inv
             relative_y *= distance_inv
             relative_z *= distance_inv
@@ -100,8 +98,7 @@ class Universe(BaseUniverse):
         self._r = None
         self._a = None
         self._m = None
-
-        assert self._variation == VARIATIONS.selected  # TODO check, just in case
+        self._Gd = None
 
     def start_kernel(self):
         # Allocate memory: Object parameters
@@ -113,6 +110,8 @@ class Universe(BaseUniverse):
         for idx, pm in enumerate(self._masses):
             self._m[idx] = pm.m
 
+        self._Gd = getattr(np, self._variation.getvalue('dtype'))(self._G)
+
     def push_stage1(self):
         for idx, pm in enumerate(self._masses):
             self._r[:, idx] = pm.r[:]
@@ -120,7 +119,7 @@ class Universe(BaseUniverse):
     def step_stage1(self):
         self._a[:, :] = 0.0
 
-        _step_stage1_guv(self._r, self._m, self._G, self._a)
+        _step_stage1_guv(self._r, self._m, self._Gd, self._a)
 
     def pull_stage1(self):
         for idx, pm in enumerate(self._masses):
