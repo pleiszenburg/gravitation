@@ -6,8 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/cc3/__init__.py: Kernel init file
-
+    src/gravitation/kernel/cc3/setup.py: Kernel setup
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
 <LICENSE_BLOCK>
@@ -28,16 +27,31 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from gravitation import Dtype, Target, Threads
-from gravitation import Variation, Variations
+import os
+
+from setuptools import Extension
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# KERNEL META
+# KERNEL SETUP
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-DESCRIPTION = "plain C-core, ctypes-interface, SIMD via AVX2"
-REQUIREMENTS = []
-
-VARIATIONS = Variations()
-for dtype in Dtype:
-    VARIATIONS.add(Variation(dtype = dtype, target = Target.cpu, threads = Threads.single))
+EXTENTIONS = [
+    Extension(
+        f"gravitation.kernel.{os.path.split(__file__)[-2]:s}.lib",
+        [os.path.join(os.path.dirname(__file__), "lib.c")],
+        extra_compile_args=[
+            "-std=gnu11",
+            "-fPIC",
+            "-O3",
+            "-march=native",
+            "-mtune=native",
+            "-mfpmath=sse",
+            "-Wall",
+            "-Wdouble-promotion",
+            "-Winline",
+            "-Werror",
+            "-mavx2",
+        ],
+        extra_link_args=["-lm"],
+    ),
+]

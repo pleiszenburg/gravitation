@@ -25,27 +25,13 @@ specific language governing rights and limitations under the License.
 """
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# KERNEL META
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-__longname__ = "c-backend 3"
-__version__ = "0.1.0"
-__description__ = "plain C-core, ctypes-interface, SIMD"
-__requirements__ = []
-__externalrequirements__ = ["gcc"]
-__interpreters__ = ["python3"]
-__parallel__ = False
-__license__ = "GPLv2"
-__authors__ = [
-    "Sebastian M. Ernst <ernst@pleiszenburg.de>",
-]
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+from gravitation import typechecked
+
+from . import DESCRIPTION
 from ..cc2.kernel import Universe as UniverseCc2
-from ...lib.debug import typechecked
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -54,4 +40,4 @@ from ...lib.debug import typechecked
 
 @typechecked
 class Universe(UniverseCc2):
-    __doc__ = __description__
+    __doc__ = DESCRIPTION
