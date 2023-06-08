@@ -131,7 +131,13 @@ def plot(logfile, out):
         for size, runtime in sorted(results.items(), key=lambda x: x[0]):
             x.append(size)
             y.append(runtime * 1e-9)
-        traces.append(go.Scatter(x=x, y=y, name=key, mode="lines+markers"))
+        traces.append(go.Scatter(
+            x=x,
+            y=y,
+            name=key,
+            mode="lines+markers",
+            hovertemplate = "%{y}",
+        ))
         xc.update(set(x))
         yc.update(set(y))
 
@@ -163,10 +169,14 @@ def plot(logfile, out):
         ),
     )
     fig = go.Figure(data=traces, layout=layout)
+
     fig.update_layout(legend=dict(
         yanchor="top",
         y=0.99,
         xanchor="left",
         x=0.01
     ))
+
+    fig.update_layout(hovermode="x unified")
+
     _plot(fig, filename=out)
