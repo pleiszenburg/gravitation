@@ -8,7 +8,7 @@ _clean_c:
 
 _clean_bin:
 	find src/ -name '*.dll' -exec rm -f {} +
-	find src/  -name '*.so' -exec rm -f {} +
+	find src/ -name '*.so' -exec rm -f {} +
 
 _clean_octave:
 	find src/ -name 'octave-workspace' -exec rm -f {} +
