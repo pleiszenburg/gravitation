@@ -35,7 +35,7 @@ from gravitation import BaseUniverse
 from gravitation import DIMS, Target, Threads
 from gravitation import typechecked
 
-from . import DESCRIPTION, VARIATIONS
+from .meta import DESCRIPTION, VARIATIONS
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONFIG

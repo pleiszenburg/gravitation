@@ -23,21 +23,3 @@ specific language governing rights and limitations under the License.
 </LICENSE_BLOCK>
 
 """
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# IMPORT
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-from gravitation import Dtype, Target, Threads
-from gravitation import Variation, Variations
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# KERNEL META
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-DESCRIPTION = "plain C-core, ctypes-interface, SIMD via AVX2"
-REQUIREMENTS = []
-
-VARIATIONS = Variations()
-for dtype in Dtype:
-    VARIATIONS.add(Variation(dtype = dtype, target = Target.cpu, threads = Threads.single))

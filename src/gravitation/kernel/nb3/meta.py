@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/kernel/py1/kernel.py: Kernel
+    src/gravitation/kernel/nb3/meta.py: Kernel meta
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -28,39 +28,20 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-import math
-
-from gravitation import BaseUniverse
-from gravitation import Dtype
-from gravitation import typechecked
-from gravitation import VariationError
-from gravitation import PointMass
-
-from .meta import DESCRIPTION
+from gravitation import Dtype, Target, Threads
+from gravitation import Variation, Variations
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# CLASSES
+# KERNEL META
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+DESCRIPTION = "numba guvectorize-kernel"
+REQUIREMENTS = ["numba", "numpy"]
 
-@typechecked
-class Universe(BaseUniverse):
-    __doc__ = DESCRIPTION
-
-    def start_kernel(self):
-        if self._variation['dtype'] is Dtype.float32:
-            raise VariationError('kernel does not support float32')
-
-    def _update_pair(self, pm1: PointMass, pm2: PointMass):
-        relative_r = [(r1 - r2) for r1, r2 in zip(pm1.r, pm2.r)]
-        distance = math.sqrt(sum([r**2 for r in relative_r]))
-        relative_r = [r / distance for r in relative_r]
-        a1 = self._G * pm2.m / (distance**2)
-        a2 = self._G * pm1.m / (distance**2)
-        pm1.a[:] = [a - r * a1 for r, a in zip(relative_r, pm1.a)]
-        pm2.a[:] = [a + r * a2 for r, a in zip(relative_r, pm2.a)]
-
-    def step_stage1(self):
-        for pm1_index, pm1 in enumerate(self._masses[:-1]):
-            for pm2 in self._masses[pm1_index + 1 :]:
-                self._update_pair(pm1, pm2)
+VARIATIONS = Variations()
+for dtype in Dtype:
+    for threads in Threads:
+        if threads is Threads.auto:
+            continue
+        VARIATIONS.add(Variation(dtype = dtype, target = Target.cpu, threads = threads))
+    VARIATIONS.add(Variation(dtype = dtype, target = Target.gpu, threads = Threads.auto))

@@ -34,7 +34,7 @@ import sysconfig
 
 from gravitation import BaseUniverse, typechecked
 
-from . import DESCRIPTION
+from .meta import DESCRIPTION
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES

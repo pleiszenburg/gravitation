@@ -30,7 +30,7 @@ specific language governing rights and limitations under the License.
 
 from gravitation import typechecked
 
-from . import DESCRIPTION
+from .meta import DESCRIPTION
 from ..cc2.kernel import Universe as UniverseCc2
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
