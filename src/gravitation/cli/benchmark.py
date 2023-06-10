@@ -82,7 +82,7 @@ class _Processing:
 
     def __call__(
         self,
-        stream_id: Stream,  # TODO handle err (warnings)
+        stream_id: Stream,
         line: str,
     ):
 
