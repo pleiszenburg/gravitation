@@ -46,7 +46,8 @@ from .lib.const import (
     Threads,
     DEFAULT_DTYPE,
     DEFAULT_TARGET,
-    DEFAULT_THREADS
+    DEFAULT_THREADS,
+    DEFAULT_LEN,
 )
 from .lib.debug import (
     DEBUG,
