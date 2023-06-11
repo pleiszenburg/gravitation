@@ -45,3 +45,6 @@ class VariationError(Exception):
 
 class ViewError(Exception):
     pass
+
+class WorkerError(Exception):
+    pass
