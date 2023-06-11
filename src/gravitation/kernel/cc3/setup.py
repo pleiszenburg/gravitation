@@ -7,6 +7,7 @@ n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
     src/gravitation/kernel/cc3/setup.py: Kernel setup
+
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
 <LICENSE_BLOCK>
