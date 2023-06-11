@@ -60,10 +60,16 @@ from .lib.errors import (
     UniverseError,
     VariationError,
     ViewError,
+    WorkerError,
 )
 from .lib.kernel import (
     Kernel,
     KERNELS,
+)
+from .lib.logging import (
+    InfoLog,
+    StepLog,
+    WorkerLog,
 )
 from .lib.mass import PointMass
 from .lib.shm import (
@@ -85,3 +91,4 @@ from .lib.view import (
     View,
     VIEWS,
 )
+from .lib.worker import Worker
