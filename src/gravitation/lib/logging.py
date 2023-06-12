@@ -524,8 +524,8 @@ class BenchmarkLog:
         if len(data) == 0:
             return
 
-        x = sorted(data.keys())
-        y = [data[length] for length in x]
+        x = sorted(data.keys())  # TODO property
+        y = [data[length] for length in x]  # TODO property
 
         current_length = x[-1]
         current_iteration = list(self._workers[current_length].iterations())[-1]
@@ -552,3 +552,12 @@ class BenchmarkLog:
             ],
         )
         fig.show()
+
+    @classmethod
+    def from_fh(
+        cls,
+        fn: TextIOWrapper,
+    ):  # -> List[Self]
+        "import from line-based decoded file or stream via handle"
+
+        # TODO
