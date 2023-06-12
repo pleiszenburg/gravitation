@@ -30,8 +30,9 @@ specific language governing rights and limitations under the License.
 
 from io import TextIOWrapper
 from shutil import get_terminal_size
-import termplotlib as tpl
 from typing import Any, Dict, Generator, List, Optional
+
+import termplotlib as tpl
 
 from .debug import typechecked
 from .logworker import WorkerLog
