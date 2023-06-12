@@ -70,6 +70,7 @@ from .lib.kernel import (
 )
 from .lib.logbenchmark import BenchmarkLog
 from .lib.loginfo import InfoLog
+from .lib.logsession import SessionLog
 from .lib.logstep import StepLog
 from .lib.logworker import WorkerLog
 from .lib.mass import PointMass
