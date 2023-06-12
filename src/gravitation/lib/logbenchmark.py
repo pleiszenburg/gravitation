@@ -28,7 +28,6 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from io import TextIOWrapper
 from shutil import get_terminal_size
 from typing import Any, Dict, Generator, List, Optional
 
@@ -164,11 +163,7 @@ class BenchmarkLog:
         )
         fig.show()
 
-    @classmethod
-    def from_fh(
-        cls,
-        fn: TextIOWrapper,
-    ):  # -> List[Self]
-        "import from line-based decoded file or stream via handle"
+    def to_dict(self) -> dict:
+        "export as dict"
 
-        # TODO
+        return {length: self._workers[length].to_dict() for length in self.lengths(include_empty=True)}
