@@ -195,7 +195,7 @@ class WorkerLog:
             info = self._info.to_dict(),
             status = self._status,
             length = self._length,
-            steps = {step.iteration: step.to_dict() for step in self._steps.items()},
+            steps = {step.iteration: step.to_dict() for step in self},
         )
 
     @classmethod
