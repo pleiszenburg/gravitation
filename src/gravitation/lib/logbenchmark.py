@@ -31,7 +31,7 @@ specific language governing rights and limitations under the License.
 from io import TextIOWrapper
 from shutil import get_terminal_size
 import termplotlib as tpl
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from .debug import typechecked
 from .logworker import WorkerLog
@@ -86,10 +86,22 @@ class BenchmarkLog:
 
         self._workers[worker.length] = worker
 
-    def lengths(self) -> Generator:
+    def lengths(self, include_empty: bool = False) -> List[int]:
         "sorted generator of available lengths"
 
-        return (length for length in self._workers.keys())
+        if include_empty:
+            return sorted(self._workers.keys())
+
+        return [
+            length
+            for length in sorted(self._workers.keys())
+            if len(self._workers[length]) > 0
+        ]
+
+    def runtimes_min(self) -> List[int]:
+        "minimal runtimes per iteration/step"
+
+        return [self._workers[length].runtime_min for length in self.lengths()]
 
     def live(self, key: str, value: Any, time: int):
         "handle incoming live stream of logs"
@@ -119,20 +131,14 @@ class BenchmarkLog:
         if len(self) == 0:
             return
 
-        data = {
-            length: self._workers[length].runtime_min * 1e-9
-            for length in self.lengths()
-            if len(self._workers[length]) > 0
-        }
+        x = self.lengths()
+        y = [runtime * 1e-9 for runtime in self.runtimes_min()]
 
-        if len(data) == 0:
+        if len(x) == 0:
             return
 
-        x = sorted(data.keys())  # TODO property
-        y = [data[length] for length in x]  # TODO property
-
         current_length = x[-1]
-        current_iteration = list(self._workers[current_length].iterations())[-1]
+        current_iteration = self._workers[current_length].iterations()[-1]
         t = get_terminal_size((80, 20))
         label = " / ".join([
             f"kernel={self._get().kernel:s}",
