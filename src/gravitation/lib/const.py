@@ -38,6 +38,11 @@ from psutil import cpu_count as _cpu_count
 # CONSTS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+class Display(_Enum):
+    none = _auto()
+    log = _auto()
+    plot = _auto()
+
 class Dtype(_Enum):
     float32 = _auto()
     float64 = _auto()
