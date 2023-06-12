@@ -36,7 +36,8 @@ from .const import Display, Stream
 from .debug import typechecked
 from .errors import BenchmarkLogError
 from .kernel import KERNELS
-from .logging import BenchmarkLog, WorkerLog
+from .logbenchmark import BenchmarkLog
+from .logworker import WorkerLog
 from .proc import run_command
 from .worker import Worker
 

@@ -36,7 +36,9 @@ from typing import List, Optional, Tuple
 from .debug import typechecked
 from .errors import WorkerError
 from .kernel import KERNELS
-from .logging import InfoLog, StepLog, WorkerLog
+from .loginfo import InfoLog
+from .logstep import StepLog
+from .logworker import WorkerLog
 from .timing import BestRunTimer, ElapsedTimer
 from .variation import Variation
 

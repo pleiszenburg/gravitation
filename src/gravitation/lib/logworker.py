@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/cli/logging.py: benchmark log types
+    src/gravitation/cli/logworker.py: worker log type
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -28,173 +28,21 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from copy import deepcopy
 from io import TextIOWrapper
 from json import decoder, dumps, loads
-from platform import (
-    python_compiler,
-    python_build,
-    python_implementation,
-    machine,
-    processor,
-    release,
-    system,
-    version,
-)
-from shutil import get_terminal_size
 import sys
-import termplotlib as tpl
 from time import time_ns
 from typing import Any, Dict, Generator, Optional
 
-try:
-    import cpuinfo
-except ModuleNotFoundError:
-    cpuinfo = None
-
-try:
-    import GPUtil
-except ModuleNotFoundError:
-    GPUtil = None
-
-from .const import Threads
 from .debug import typechecked
 from .errors import BenchmarkLogError
+from .loginfo import InfoLog
+from .logstep import StepLog
 from .variation import Variation
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-@typechecked
-class InfoLog:
-    "holds information on the worker platform"
-
-    def __init__(self, **meta):
-        self._meta = meta
-
-    def __getitem__(self, key: str) -> Any:
-        return self._meta[key]
-
-    def __eq__(self, other: Any) -> bool:
-
-        self_meta = deepcopy(self.meta)
-        other_meta = deepcopy(other.meta)
-
-        for meta in (self_meta, other_meta):
-            for key in ('hz_advertised_friendly', 'hz_actual_friendly', 'hz_advertised', 'hz_actual'):
-                meta['cpu_info'].pop(key)
-            for gpu in meta['gpu_info']:
-                for key in ('load', 'memoryFree', 'memoryUsed', 'memoryUtil', 'temperature'):
-                    gpu.pop(key)
-
-        return self_meta == other_meta
-
-    @property
-    def meta(self) -> dict:
-        "info meta data"
-
-        return self._meta
-
-    def to_dict(self) -> dict:
-        "export as dict"
-
-        return deepcopy(self._meta)
-
-    @classmethod
-    def from_dict(cls, **kwargs: Any):
-        "import from dict"
-
-        return cls(**kwargs)
-
-    @classmethod
-    def from_new(cls):
-        "new info"
-
-        return cls(
-            python_build=list(python_build()),
-            python_compiler=python_compiler(),
-            python_implementation=python_implementation(),
-            python_version=list(sys.version_info),
-            os_system=system(),
-            os_release=release(),
-            os_version=version(),
-            cpu_machine=machine(),
-            cpu_processor=processor(),
-            cpu_physical=Threads.physical.value,
-            cpu_logical=Threads.logical.value,
-            cpu_info=cpuinfo.get_cpu_info() if cpuinfo is not None else {},
-            gpu_info=[
-                {
-                    n: getattr(gpu, n)
-                    for n in dir(gpu)
-                    if not n.startswith("_") and n not in ("serial", "uuid")
-                }
-                for gpu in GPUtil.getGPUs()
-            ]
-            if GPUtil is not None
-            else {},
-        )
-
-
-@typechecked
-class StepLog:
-    "represents one single benchmark step"
-
-    def __init__(self, iteration: int, runtime: int, gctime: int, runtime_min: int, gctime_min: int):
-        self._iteration = iteration
-        self._runtime = runtime
-        self._gctime = gctime
-        self._runtime_min = runtime_min
-        self._gctime_min = gctime_min
-
-    @property
-    def iteration(self) -> int:
-        "iteration of step"
-
-        return self._iteration
-
-    @property
-    def runtime(self) -> int:
-        "runtime of step"
-
-        return self._runtime
-
-    @property
-    def gctime(self) -> int:
-        "gc time of step"
-
-        return self._iteration
-
-    @property
-    def runtime_min(self) -> int:
-        "current minimal runtime"
-
-        return self._runtime_min
-
-    @property
-    def gctime_min(self) -> int:
-        "current minimal gc time"
-
-        return self._gctime_min
-
-    def to_dict(self) -> dict:
-        "export as dict"
-
-        return dict(
-            iteration = self._iteration,
-            runtime = self._runtime,
-            gctime = self._gctime,
-            runtime_min = self._runtime_min,
-            gctime_min = self._gctime_min,
-        )
-
-    @classmethod
-    def from_dict(cls, **kwargs: Any):
-        "import from dict"
-
-        return cls(**kwargs)
 
 
 @typechecked
@@ -436,128 +284,3 @@ class WorkerLog:
             return loads(line.rstrip('\n'))
         except decoder.JSONDecodeError as e:
             raise BenchmarkLogError('line is not valid JSON') from e
-
-
-@typechecked
-class BenchmarkLog:
-    "represents multiple worker runs, multiple lengths, one kernel & variation"
-
-    def __init__(self, workers: Optional[Dict[int, WorkerLog]] = None):
-
-        if workers is not None and len(workers) > 1:
-            verify = next(map(lambda x: x, workers.values()))
-            if any(verify != worker for worker in workers.values):
-                raise BenchmarkLogError('workers inconsistent')
-
-        self._workers = {} if workers is None else workers
-        self._current = None
-
-    def __len__(self) -> int:
-        return len(self._workers)
-
-    def __getitem__(self, length: int) -> WorkerLog:
-        try:
-            return self._workers[length]
-        except KeyError as e:
-            raise BenchmarkLogError('length not present in benchmark') from e
-
-    def __iter__(self) -> Generator:
-        return (self._workers[length] for length in sorted(self._workers.keys()))
-
-    def _get(self):
-        "return random worker if present or None"
-
-        if len(self) == 0:
-            return None
-
-        return next(map(lambda x: x, self._workers.values()))
-
-    def add(self, worker: WorkerLog):
-        "add worker to benchmark run"
-
-        if not self.matches(worker):
-            raise BenchmarkLogError('worker does not belong to benchmark')
-        if worker.length in self._workers.keys():
-            raise BenchmarkLogError('length already present in benchmark')
-
-        self._workers[worker.length] = worker
-
-    def lengths(self) -> Generator:
-        "sorted generator of available lengths"
-
-        return (length for length in self._workers.keys())
-
-    def live(self, key: str, value: Any, time: int):
-        "handle incoming live stream of logs"
-
-        if key == "start":
-            self._current = WorkerLog.from_dict(**value)
-            self.add(self._current)
-            return
-        elif key != 'start' and (
-            self._current is None or self._current.status not in ('start', 'running')
-        ):
-            return  # TODO some kind of error ocurred
-
-        self._current.live(key = key, value = value, time = time)
-
-    def matches(self, worker: WorkerLog) -> bool:
-        "check if workers belong to same benchmark"
-
-        if len(self._workers) == 0:
-            return True
-
-        return self._get().matches(worker)
-
-    def plot_cli(self):
-        "plot current state of benchmark"
-
-        if len(self) == 0:
-            return
-
-        data = {
-            length: self._workers[length].runtime_min * 1e-9
-            for length in self.lengths()
-            if len(self._workers[length]) > 0
-        }
-
-        if len(data) == 0:
-            return
-
-        x = sorted(data.keys())  # TODO property
-        y = [data[length] for length in x]  # TODO property
-
-        current_length = x[-1]
-        current_iteration = list(self._workers[current_length].iterations())[-1]
-        t = get_terminal_size((80, 20))
-        label = " / ".join([
-            f"kernel={self._get().kernel:s}",
-            f"variation={repr(self._get().variation):s}",
-            f"len={current_length:d}",
-            f"iteration={current_iteration:d}",
-            f"best={y[-1]:.02e}s",
-        ])
-
-        fig = tpl.figure()
-        fig.plot(
-            x,
-            y,
-            label=label,
-            width=t.columns,
-            height=t.lines,
-            extra_gnuplot_arguments=[
-                "set logscale x 2",
-                'set format y "10^{%L}"',
-                "set logscale y 10",
-            ],
-        )
-        fig.show()
-
-    @classmethod
-    def from_fh(
-        cls,
-        fn: TextIOWrapper,
-    ):  # -> List[Self]
-        "import from line-based decoded file or stream via handle"
-
-        # TODO

@@ -68,11 +68,10 @@ from .lib.kernel import (
     Kernel,
     KERNELS,
 )
-from .lib.logging import (
-    InfoLog,
-    StepLog,
-    WorkerLog,
-)
+from .lib.logbenchmark import BenchmarkLog
+from .lib.loginfo import InfoLog
+from .lib.logstep import StepLog
+from .lib.logworker import WorkerLog
 from .lib.mass import PointMass
 from .lib.shm import (
     ShmPool,
