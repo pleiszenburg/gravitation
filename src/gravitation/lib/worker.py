@@ -29,8 +29,9 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import gc
+from itertools import chain
 import traceback
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from .debug import typechecked
 from .errors import WorkerError
@@ -212,3 +213,43 @@ class Worker:
 
         WorkerLog.log(key = "info", value = "Extra steps finished.")
         self._exit()
+
+    @staticmethod
+    def command(
+        datafile: str,
+        kernel: str,
+        length: int,
+        save_after_iteration: Tuple[int, ...],
+        read_initial_state: bool,
+        min_iterations: int,
+        min_total_runtime: int,
+        **kwargs,  # variation
+    ) -> List[str]:
+        "returns command list for use with subprocess.Popen"
+
+        cmd = [
+            "gravitation",
+            "worker",
+            "--len",
+            f"{length:d}",
+            "--datafile",
+            datafile,
+            *list(
+                chain(
+                    *[("--save_after_iteration", f"{it:d}") for it in save_after_iteration]
+                )
+            ),
+            "--min_iterations",
+            f"{min_iterations:d}",
+            "--min_total_runtime",
+            f"{min_total_runtime:d}",
+        ]
+
+        if read_initial_state:
+            cmd.append("--read_initial_state")
+
+        cmd.append(kernel)
+        for key, value in kwargs.items():
+            cmd.extend((f'--{key:s}', str(value)))
+
+        return cmd
