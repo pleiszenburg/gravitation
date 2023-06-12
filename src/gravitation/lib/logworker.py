@@ -32,7 +32,7 @@ from io import TextIOWrapper
 from json import decoder, dumps, loads
 import sys
 from time import time_ns
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from .debug import typechecked
 from .errors import BenchmarkLogError
@@ -74,7 +74,7 @@ class WorkerLog:
             raise BenchmarkLogError('iteration not present in log') from e
 
     def __iter__(self) -> Generator:
-        return (self._steps[iteration] for iteration in sorted(self.iterations()))
+        return (self._steps[iteration] for iteration in self.iterations())
 
     @property
     def kernel(self) -> str:
@@ -124,7 +124,7 @@ class WorkerLog:
         if len(self) == 0:
             raise BenchmarkLogError('no data available')
 
-        return self._steps[list(self.iterations())[-1]].runtime_min
+        return self._steps[self.iterations()[-1]].runtime_min
 
     @property
     def gctime_min(self) -> int:
@@ -133,7 +133,7 @@ class WorkerLog:
         if len(self) == 0:
             raise BenchmarkLogError('no data available')
 
-        return self._steps[list(self.iterations())[-1]].gctime_min
+        return self._steps[self.iterations()[-1]].gctime_min
 
     def add(self, step: StepLog):
         "add step to worker run"
@@ -148,10 +148,10 @@ class WorkerLog:
         self._steps[step.iteration] = step
         self._status = 'running'
 
-    def iterations(self) -> Generator:
+    def iterations(self) -> List[int]:
         "sorted generator of available iterations"
 
-        return (iteration for iteration in sorted(self._steps.keys()))
+        return sorted(self._steps.keys())
 
     def live(self, key: str, value: Any, time: int):
         "handle incoming live stream of logs"
