@@ -86,6 +86,7 @@ class _Reader:
         "join queue and thread"
         self._queue.join()
         self._thread.join()
+        self._processing.join()
 
 
 @typechecked
