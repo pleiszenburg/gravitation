@@ -38,7 +38,9 @@ __version__ = "0.2.0"
 
 from .lib.baseuniverse import BaseUniverse
 from .lib.baseviewer import BaseViewer
+from .lib.benchmark import Benchmark
 from .lib.const import (
+    Display,
     State,
     DIMS,
     Dtype,
