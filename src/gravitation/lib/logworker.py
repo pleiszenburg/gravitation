@@ -216,7 +216,7 @@ class WorkerLog:
             info = InfoLog.from_dict(**info),
             status = status,
             length = length,
-            steps = {iteration: StepLog.from_dict(**step) for iteration, step in steps.items()},
+            steps = {int(iteration): StepLog.from_dict(**step) for iteration, step in steps.items()},
         )
 
     @classmethod
