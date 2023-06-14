@@ -166,4 +166,18 @@ class BenchmarkLog:
     def to_dict(self) -> dict:
         "export as dict"
 
-        return {length: self._workers[length].to_dict() for length in self.lengths(include_empty=True)}
+        return dict(workers = {
+            length: self._workers[length].to_dict()
+            for length in self.lengths(include_empty=True)
+        })
+
+    @classmethod
+    def from_dict(cls, workers: dict):
+        "import from dict"
+
+        return cls(
+            workers = {
+                length: WorkerLog.from_dict(**worker)
+                for length, worker in workers.items()
+            }
+        )
