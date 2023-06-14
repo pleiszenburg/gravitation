@@ -68,6 +68,65 @@ class SessionLog:
 
         self._benchmarks.extend(other)
 
+    def to_runtime_dict(self):
+        "for use with plotting tools"
+
+        traces = [
+            benchmark.to_runtime_dict()
+            for benchmark in self
+        ]
+
+        xs = sorted({
+            value
+            for trace in traces
+            for value in trace['x']
+        })
+        ymin = min({
+            value
+            for trace in traces
+            for value in trace['y']
+        })
+        for idx in range(2, 4):
+            traces.append(dict(
+                type="scatter",
+                x=xs.copy(),
+                y=[
+                    (ymin / (xs[0] ** idx)) * (x ** idx)
+                    for x in xs
+                ],
+                name=f'x^{idx:d}',
+                mode="lines",
+                line_color='rgba(200,200,200,128)',
+            ))
+
+        layout = dict(
+            autosize=True,
+            xaxis=dict(
+                type="log",
+                autorange=True,
+                title="items per simulation",
+            ),
+            yaxis=dict(
+                type="log",
+                autorange=True,
+                scaleanchor="x",
+                scaleratio=0.3,
+                title="time per iteration [s]",
+            ),
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01
+            ),
+            hovermode="x unified",
+        )
+
+        return dict(
+            data = traces,
+            layout = layout,
+        )
+
     def to_dict(self) -> dict:
         "export as dict"
 
