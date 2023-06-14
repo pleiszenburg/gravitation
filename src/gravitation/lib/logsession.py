@@ -29,8 +29,8 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 from io import TextIOWrapper
-from json import dumps
-from typing import List, Optional
+from json import dumps, loads
+from typing import Any, Generator, List, Optional
 
 from .debug import typechecked
 from .logbenchmark import BenchmarkLog
@@ -51,10 +51,34 @@ class SessionLog:
     def __len__(self) -> int:
         return len(self._benchmarks)
 
+    def __repr__(self) -> str:
+        return f'<SessionLog len={len(self):d}>'
+
+    def __getitem__(self, idx: int) -> BenchmarkLog:
+        return self._benchmarks[idx]
+
+    def __iter__(self) -> Generator:
+        return (benchmark for benchmark in self._benchmarks)
+
+    def merge(self, other: Any):
+        "merge other session into this one"
+
+        if not isinstance(other, type(self)):
+            raise TypeError()
+
+        self._benchmarks.extend(other)
+
+    def to_dict(self) -> dict:
+        "export as dict"
+
+        return dict(
+            benchmarks = [benchmark.to_dict() for benchmark in self._benchmarks]
+        )
+
     def to_fh(self, fh: TextIOWrapper):
         "to file handle"
 
-        fh.write(dumps([benchmark.to_dict() for benchmark in self._benchmarks], indent=4, sort_keys=True))
+        fh.write(dumps(self.to_dict(), indent=4, sort_keys=True))
         fh.flush()
 
     def to_file(self, fn: str):
@@ -64,8 +88,30 @@ class SessionLog:
             self.to_fh(f)
 
     @classmethod
-    def from_raw_fh(cls, fh: TextIOWrapper):
+    def from_dict(cls, benchmarks: dict):
+        "import from dict"
+
+        return cls(benchmarks = [
+            BenchmarkLog.from_dict(**benchmark)
+            for benchmark in benchmarks
+        ])
+
+    @classmethod
+    def from_fh(cls, fh: TextIOWrapper):
         "from file handle"
+
+        return cls.from_dict(**loads(fh.read()))
+
+    @classmethod
+    def from_file(cls, fn: str):
+        "from file"
+
+        with open(fn, mode = 'r', encoding = 'utf-8') as f:
+            return cls.from_fh(f)
+
+    @classmethod
+    def from_log_fh(cls, fh: TextIOWrapper):
+        "from log file handle"
 
         workers = []
 
@@ -91,8 +137,8 @@ class SessionLog:
         return cls(benchmarks)
 
     @classmethod
-    def ingest(cls, fin: TextIOWrapper, fout: TextIOWrapper):
-        "ingest raw worker log file and convert to session log"
+    def from_log_file(cls, fn: str):
+        "from log file"
 
-        session = cls.from_raw_fh(fin)
-        session.to_fh(fout)
+        with open(fn, mode = 'r', encoding = 'utf-8') as f:
+            return cls.from_log_fh(f)
