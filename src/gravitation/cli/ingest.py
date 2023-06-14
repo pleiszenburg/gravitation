@@ -37,24 +37,24 @@ from ..lib.logsession import SessionLog
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@click.command(short_help="ingest benchmark logfile")
-@click.option(
-    "--logfile",
-    "-l",
-    default="benchmark.log",
+@click.command(short_help="ingest benchmark logfiles")
+@click.argument(
+    "logfiles",
     type=click.File("r"),
-    show_default=True,
-    help="name of input log file",
+    nargs=-1,
+    required=True,
 )
-@click.option(
-    "--data",
-    "-o",
-    default="benchmark.json",
+@click.argument(
+    "output",
     type=click.File("w"),
-    show_default=True,
-    help="name of output data file",
+    nargs=1,
 )
-def ingest(logfile, data):
-    """ingest benchmark logfile"""
+def ingest(logfiles, output):
+    """ingest benchmark logfiles"""
 
-    SessionLog.ingest(logfile, data)
+    session = SessionLog.from_log_fh(logfiles[0])
+
+    for logfile in logfiles[1:]:
+        session.merge(SessionLog.from_log_fh(logfile))
+
+    session.to_fh(output)
