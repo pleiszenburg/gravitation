@@ -45,16 +45,16 @@ from ..lib.logsession import SessionLog
     required=True,
 )
 @click.argument(
-    "output",
+    "session",
     type=click.File("w"),
     nargs=1,
 )
-def ingest(logfiles, output):
+def ingest(logfiles, session):
     """ingest benchmark logfiles"""
 
-    session = SessionLog.from_log_fh(logfiles[0])
+    session_ = SessionLog.from_log_fh(logfiles[0])
 
     for logfile in logfiles[1:]:
-        session.merge(SessionLog.from_log_fh(logfile))
+        session_.merge(SessionLog.from_log_fh(logfile))
 
-    session.to_fh(output)
+    session_.to_fh(session)
