@@ -50,7 +50,7 @@ class BenchmarkLog:
 
         if workers is not None and len(workers) > 1:
             verify = next(map(lambda x: x, workers.values()))
-            if any(verify != worker for worker in workers.values):
+            if any(not verify.matches(worker) for worker in workers.values()):
                 raise BenchmarkLogError('workers inconsistent')
 
         self._workers = {} if workers is None else workers
@@ -68,7 +68,7 @@ class BenchmarkLog:
     def __iter__(self) -> Generator:
         return (self._workers[length] for length in sorted(self._workers.keys()))
 
-    def _get(self):
+    def _get(self) -> Optional[WorkerLog]:
         "return random worker if present or None"
 
         if len(self) == 0:
@@ -85,6 +85,23 @@ class BenchmarkLog:
             raise BenchmarkLogError('length already present in benchmark')
 
         self._workers[worker.length] = worker
+
+    def label(self) -> str:
+        "for use with plotting tools"
+
+        worker = self._get()
+
+        if worker is None:
+            raise BenchmarkLogError('no worker present')
+
+        return ' / '.join([
+            f"kernel={worker.kernel:s}",
+            *[
+                f"{key:s}={str(worker.variation.getvalue(key)):s}"
+                for key in worker.variation.keys()
+            ],
+            f"implementation={worker.info['python_implementation']:s}",
+        ])
 
     def lengths(self, include_empty: bool = False) -> List[int]:
         "sorted generator of available lengths"
@@ -171,13 +188,24 @@ class BenchmarkLog:
             for length in self.lengths(include_empty=True)
         })
 
+    def to_runtime_dict(self) -> dict:
+        "for use with plotting tools"
+
+        return dict(
+            type = "scatter",
+            x = self.lengths(),
+            y = [runtime * 1e-9 for runtime in self.runtimes_min()],
+            name = self.label(),
+            hovertemplate = "%{y}",
+        )
+
     @classmethod
     def from_dict(cls, workers: dict):
         "import from dict"
 
         return cls(
             workers = {
-                length: WorkerLog.from_dict(**worker)
+                int(length): WorkerLog.from_dict(**worker)
                 for length, worker in workers.items()
             }
         )
