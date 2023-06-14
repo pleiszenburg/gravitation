@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/cli/analyze.py: analyze command
+    src/gravitation/cli/ingest.py: ingest command
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -37,7 +37,7 @@ from ..lib.logsession import SessionLog
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@click.command(short_help="analyze benchmark logfile")
+@click.command(short_help="ingest benchmark logfile")
 @click.option(
     "--logfile",
     "-l",
@@ -54,7 +54,7 @@ from ..lib.logsession import SessionLog
     show_default=True,
     help="name of output data file",
 )
-def analyze(logfile, data):
-    """analyze benchmark logfile"""
+def ingest(logfile, data):
+    """ingest benchmark logfile"""
 
     SessionLog.ingest(logfile, data)
