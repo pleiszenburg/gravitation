@@ -45,7 +45,7 @@ from ..lib.kernel import KERNELS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@click.command(short_help="verify model results against reference kernel")
+@click.command(short_help="plot results of model verification against reference kernel")
 @click.argument(
     "reference",
     type=click.Choice(sorted(list(KERNELS.keys()))),
