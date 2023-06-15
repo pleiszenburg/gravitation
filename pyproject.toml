@@ -121,6 +121,14 @@ exclude = '''
 include-package-data = true
 zip-safe = false
 
+[tool.setuptools.dynamic]
+version = {attr = "gravitation.__version__"}
+
+[tool.setuptools.exclude-package-data]
+gravitation = [
+    "cy*/*.c",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -129,9 +137,4 @@ gravitation = [
     "*.pyx",
     "*.js",
     "*.m",
-]
-
-[tool.setuptools.exclude-package-data]
-gravitation = [
-    "cy*/*.c",
 ]
