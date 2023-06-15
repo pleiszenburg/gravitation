@@ -38,8 +38,8 @@ from setuptools import Extension
 
 EXTENTIONS = [
     Extension(
-        f"gravitation.kernel.{os.path.split(__file__)[-2]:s}.lib",
-        [os.path.join(os.path.dirname(__file__), "lib.c")],
+        f"gravitation.kernel.{__file__.split(os.path.sep)[-2]:s}.lib",
+        [os.path.join('.', *__file__.split(os.path.sep)[-5:-1], "lib.c")],
         extra_compile_args=[
             "-std=gnu11",
             "-fPIC",
