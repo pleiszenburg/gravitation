@@ -72,6 +72,9 @@ class InfoLog:
     def __getitem__(self, key: str) -> Union[str, int]:
         return self._meta[key]
 
+    def __repr__(self) -> str:
+        return f'<InfoLog {self._meta["python_implementation"]:s} {self._meta["python_version"]:s} {self._meta["cpu_machine"]:s} {self._meta["os_system"]:s} {self._meta["os_release"]:s} {self._meta["cpu_info"]:s} ({self._meta["cpu_ram"]:d}G, {len(self._meta["gpu_info"].split(";"))} gpu[s])>'
+
     def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, type(self)):
@@ -118,7 +121,7 @@ class InfoLog:
             f'{gpu["name"]} ({round(gpu["memoryTotal"]/1024)}G, driver={gpu["driver"]} display_active={gpu["display_active"]}, display_mode={gpu["display_mode"]})'
             for gpu in gpus
         ]
-        return ', '.join(gpus)
+        return '; '.join(gpus)
 
     @classmethod
     def from_dict(cls, **kwargs: Union[str, int]):
