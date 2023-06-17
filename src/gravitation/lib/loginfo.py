@@ -40,7 +40,9 @@ from platform import (
     version,
 )
 import sys
-from typing import Any
+from typing import Any, Dict, Union
+
+import psutil
 
 try:
     import cpuinfo
@@ -64,39 +66,62 @@ from .debug import typechecked
 class InfoLog:
     "holds information on the worker platform"
 
-    def __init__(self, **meta):
+    def __init__(self, **meta: Union[str, int]):
         self._meta = meta
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> Union[str, int]:
         return self._meta[key]
 
     def __eq__(self, other: Any) -> bool:
 
-        self_meta = deepcopy(self.meta)
-        other_meta = deepcopy(other.meta)
+        if not isinstance(other, type(self)):
+            return NotImplemented
 
-        for meta in (self_meta, other_meta):
-            for key in ('hz_advertised_friendly', 'hz_actual_friendly', 'hz_advertised', 'hz_actual'):
-                meta['cpu_info'].pop(key)
-            for gpu in meta['gpu_info']:
-                for key in ('load', 'memoryFree', 'memoryUsed', 'memoryUtil', 'temperature'):
-                    gpu.pop(key)
-
-        return self_meta == other_meta
+        return self.meta == other.meta
 
     @property
-    def meta(self) -> dict:
+    def meta(self) -> Dict[str, Union[str, int]]:
         "info meta data"
 
         return self._meta
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Union[str, int]]:
         "export as dict"
 
         return deepcopy(self._meta)
 
+    @staticmethod
+    def get_cpu() -> str:
+        "get information on cpu"
+
+        if cpuinfo is None:
+            return "[cpuinfo not present]"
+
+        return cpuinfo.get_cpu_info()['brand_raw']
+
+    @staticmethod
+    def get_gpus() -> str:
+        "get information on gpus"
+
+        if GPUtil is None:
+            return "[GPUtil not present]"
+
+        gpus = [
+            {
+                n: getattr(gpu, n)
+                for n in dir(gpu)
+                if not n.startswith("_") and n not in ("serial", "uuid")
+            }
+            for gpu in GPUtil.getGPUs()
+        ]
+        gpus = [
+            f'{gpu["name"]} ({round(gpu["memoryTotal"]/1024)}G, driver={gpu["driver"]} display_active={gpu["display_active"]}, display_mode={gpu["display_mode"]})'
+            for gpu in gpus
+        ]
+        return ', '.join(gpus)
+
     @classmethod
-    def from_dict(cls, **kwargs: Any):
+    def from_dict(cls, **kwargs: Union[str, int]):
         "import from dict"
 
         return cls(**kwargs)
@@ -106,10 +131,10 @@ class InfoLog:
         "new info"
 
         return cls(
-            python_build=list(python_build()),
+            python_build=', '.join(python_build()),
             python_compiler=python_compiler(),
             python_implementation=python_implementation(),
-            python_version=list(sys.version_info),
+            python_version=f'{sys.version_info.major:d}.{sys.version_info.minor:d}.{sys.version_info.micro:d}-{sys.version_info.releaselevel:s}-{sys.version_info.serial:d}',
             os_system=system(),
             os_release=release(),
             os_version=version(),
@@ -117,15 +142,7 @@ class InfoLog:
             cpu_processor=processor(),
             cpu_physical=Threads.physical.value,
             cpu_logical=Threads.logical.value,
-            cpu_info=cpuinfo.get_cpu_info() if cpuinfo is not None else {},
-            gpu_info=[
-                {
-                    n: getattr(gpu, n)
-                    for n in dir(gpu)
-                    if not n.startswith("_") and n not in ("serial", "uuid")
-                }
-                for gpu in GPUtil.getGPUs()
-            ]
-            if GPUtil is not None
-            else {},
+            cpu_ram=psutil.virtual_memory().total // 1024**3,
+            cpu_info=cls.get_cpu(),
+            gpu_info=cls.get_gpus(),
         )
