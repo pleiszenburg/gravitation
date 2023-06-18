@@ -28,128 +28,79 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-import atexit
-from math import log2
+import sys
 
 import click
-import h5py
-import numpy as np
-from plotly.offline import plot as _plot
 import plotly.graph_objs as go
 
-from ..lib.baseuniverse import BaseUniverse
-from ..lib.kernel import KERNELS
+from ._kernel import add_kernel_commands, add_platform_options
+from ..lib.errors import VariationError, VerificationError
+from ..lib.kernel import Kernel
+from ..lib.platform import Platform
+from ..lib.verification import Verification
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CONST
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-@click.command(short_help="plot results of model verification against reference kernel")
+@click.option(
+    "--iteration",
+    "-i",
+    default=10,
+    type=int,
+    show_default=True,
+    required=True,
+    help="iteration for verification",
+)
 @click.argument(
-    "reference",
-    type=click.Choice(sorted(list(KERNELS.keys()))),
-    required=True,
+    "datafile",
+    type=click.File("rb"),
+    nargs=1,
 )
-@click.option(
-    "--datafile",
-    "-d",
-    default="data.h5",
-    type=str,
-    show_default=True,
-    help="name of benchmark data output file",
+@click.argument(
+    "plot",
+    type=click.File("w"),
+    nargs=1,
 )
-@click.option(
-    "--out",
-    "-o",
-    default="verify.html",
-    type=click.Path(exists=False, file_okay=True, dir_okay=False),
-    show_default=True,
-    required=True,
-    help="name of output html file",
-)
+@click.pass_context
 def verify(
-    reference: str,
-    datafile: str,
-    out: str,
+    ctx,
+    iteration,
+    datafile,
+    plot,
+    **platform_kwargs,
 ):
     """verify kernel results"""
 
-    f = h5py.File(datafile, mode="r")
-    atexit.register(f.close)
+    def run(kernel: Kernel, **variation_kwargs):
 
-    runs = (BaseUniverse.import_name_group(key) for key in f.keys())
-    runs = [run for run in runs if run['kernel'] != 'zero']
+        kernel.load_meta()
+        try:
+            kernel.variations.select(**variation_kwargs)
+        except VariationError as e:
+            kernel.variations.print()
+            print('ERROR:', e)
+            sys.exit(1)
 
-    kernels = sorted({meta["kernel"] for meta in runs})
-    lens = sorted({meta["len"] for meta in runs})
-    step = max({meta["step"] for meta in runs})
+        try:
+            with Verification(datafile) as verification:
+                figure = verification.to_verify_figure(
+                    kernel = kernel.name,
+                    variation = kernel.variations.selected,
+                    platform = Platform.from_dict(**platform_kwargs),
+                    iteration = iteration,
+                )
+        except VerificationError:
+            sys.exit(1)
 
-    if reference not in kernels:
-        raise ValueError("no data present for reference kernel", reference)
+        fig = go.Figure(figure)
+        fig.write_html(plot)
+        fig.show()
 
-    x = []
+    ctx.meta['run'] = run  # runs via kernel sub-command
 
-    for len_ in lens:
-        key = f"2^{round(log2(len_)):d}"
-        x.extend([key for _ in range(len_)])
 
-    data = {}
-
-    for kernel in kernels:
-        if kernel == reference:
-            continue
-
-        data[kernel] = []
-
-        for len_ in lens:
-            reference_key = BaseUniverse.export_name_group(
-                kernel=reference, len=len_, step=step
-            )
-            kernel_key = BaseUniverse.export_name_group(
-                kernel=kernel, len=len_, step=step
-            )
-
-            if reference_key not in f.keys():
-                print(f"No data for reference kernel {reference_key:s}")
-            if kernel_key not in f.keys():
-                print(f"No data for target target {kernel_key:s}")
-            if reference_key not in f.keys() or kernel_key not in f.keys():
-                data[kernel].extend(None for _ in range(len_))
-                continue
-
-            reference_r = f[reference_key]["r"][...]
-            kernel_r = f[kernel_key]["r"][...]
-            dist = np.sqrt(np.add.reduce((kernel_r - reference_r) ** 2, axis=1))
-            assert dist.shape == (len_,)
-
-            print(
-                f"Matching {kernel:s}: len={len_:d} step={step:d} min={dist.min():0.02e} max={dist.max():0.02e} mean={dist.mean():0.02e}"
-            )
-
-            data[kernel].extend([float(n) for n in dist])
-
-    fig = go.Figure()
-
-    for kernel in kernels:
-        if kernel == reference:
-            continue
-
-        assert len(x) == len(data[kernel])
-
-        fig.add_trace(
-            go.Box(
-                x=x,
-                y=data[kernel],
-                name=kernel,
-            )
-        )
-
-    fig.update_layout(
-        xaxis_title="items per simulation",
-        yaxis_title=f"location offset step={step:d}",
-        yaxis_type="log",
-        boxmode="group",
-    )
-
-    _plot(fig, filename=out)
+add_platform_options(verify)
+verify = click.group(short_help="plot results of model verification against reference kernel")(verify)
+add_kernel_commands(verify)
