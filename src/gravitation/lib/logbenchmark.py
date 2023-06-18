@@ -100,7 +100,7 @@ class BenchmarkLog:
                 f"{key:s}={str(worker.variation.getvalue(key)):s}"
                 for key in worker.variation.keys()
             ],
-            f"implementation={worker.info['python_implementation']:s}",
+            f"implementation={worker.platform['python_implementation']:s}",
         ])
 
     def lengths(self, include_empty: bool = False) -> List[int]:
