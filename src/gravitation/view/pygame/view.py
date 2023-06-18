@@ -49,8 +49,8 @@ class Viewer(BaseViewer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        unit = 1e20,  # TODO compute from universe?
-        unit_size = (16.0, 10.0),  # TODO compute from universe?
+        unit = 1e20  # TODO compute from universe?
+        unit_size = (16.0, 10.0)  # TODO compute from universe?
         base = 1024  # TODO parameter?
 
         pygame.init()
