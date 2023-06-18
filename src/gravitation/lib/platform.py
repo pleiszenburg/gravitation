@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/cli/loginfo.py: platform information log
+    src/gravitation/cli/platform.py: platform information log
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -29,6 +29,7 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 from copy import deepcopy
+from json import dumps, loads
 from platform import (
     python_compiler,
     python_build,
@@ -40,7 +41,7 @@ from platform import (
     version,
 )
 import sys
-from typing import Any, Dict, Union
+from typing import Any, Dict, Generator, Union, Tuple
 
 import psutil
 
@@ -56,6 +57,7 @@ except ModuleNotFoundError:
 
 from .const import Threads
 from .debug import typechecked
+from .option import Option
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -63,8 +65,8 @@ from .debug import typechecked
 
 
 @typechecked
-class InfoLog:
-    "holds information on the worker platform"
+class Platform:
+    "holds information on the worker platform - IMMUTABLE"
 
     def __init__(self, **meta: Union[str, int]):
         self._meta = meta
@@ -73,25 +75,40 @@ class InfoLog:
         return self._meta[key]
 
     def __repr__(self) -> str:
-        return f'<InfoLog {self._meta["python_implementation"]:s} {self._meta["python_version"]:s} {self._meta["cpu_machine"]:s} {self._meta["os_system"]:s} {self._meta["os_release"]:s} {self._meta["cpu_info"]:s} ({self._meta["cpu_ram"]:d}G, {len(self._meta["gpu_info"].split(";"))} gpu[s])>'
+        return f'<Platform {self._meta["python_implementation"]:s} {self._meta["python_version"]:s} {self._meta["cpu_machine"]:s} {self._meta["os_system"]:s} {self._meta["os_release"]:s} {self._meta["cpu_info"]:s} ({self._meta["cpu_ram"]:d}G, {len(self._meta["gpu_info"].split(";"))} gpu[s])>'
 
     def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return self.meta == other.meta
+        return self.key == other.key
 
     @property
-    def meta(self) -> Dict[str, Union[str, int]]:
-        "info meta data"
+    def key(self) -> Tuple[str, ...]:
+        "unique immutable key for set-like operations"
 
-        return self._meta
+        return tuple(self[field] for field in self.keys())
+
+    def keys(self) -> Generator:
+        "names of fields in meta data"
+
+        yield from sorted(self._meta.keys())
+
+    def to_json(self) -> str:
+        "export as json"
+
+        return dumps(self.to_dict(), sort_keys = True)
 
     def to_dict(self) -> Dict[str, Union[str, int]]:
         "export as dict"
 
         return deepcopy(self._meta)
+
+    def to_options(self) -> Tuple[Option, ...]:
+        "export to tuples that can be used to generate click command options"
+
+        return tuple(Option(k, v) for k, v in self._meta)
 
     @staticmethod
     def get_cpu() -> str:
@@ -130,8 +147,14 @@ class InfoLog:
         return cls(**kwargs)
 
     @classmethod
-    def from_new(cls):
-        "new info"
+    def from_json(cls, raw: str):
+        "import from json"
+
+        return cls.from_dict(**loads(raw))
+
+    @classmethod
+    def from_current(cls):
+        "current platform"
 
         return cls(
             python_build=', '.join(python_build()),
