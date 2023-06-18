@@ -89,6 +89,9 @@ class Variation:
             return NotImplemented
         return self.key == other.key
 
+    def __hash__(self) -> int:
+        return hash(tuple(self.getvalue(field) for field in self.keys()))
+
     @property
     def key(self) -> Tuple[str, ...]:
         "unique immutable key for set-like operations"
