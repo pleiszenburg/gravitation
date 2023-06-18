@@ -127,15 +127,18 @@ class Benchmark:
         class UniverseZero(BaseUniverse):
             "Generating common start universe"
 
-            def step_stage1(self):
+            def iterate_stage1(self):
                 "not required here"
+
+            def _get_kernel(self):
+                return "zero"
 
         for length in cls.sq_range(start, stop):
             print(
                 f"Creating initial state for {length:d} masses (max {2**stop:d}) ..."
             )
             initial_state = UniverseZero.from_galaxy(length=length)
-            initial_state.to_hdf5(fn=datafile, gn=UniverseZero.export_name_group(kernel = "zero", length = length, steps = 0))
+            initial_state.to_hdf5(fn=datafile, gn=UniverseZero.export_name_group(kernel = "zero", length = length, iteration = 0))
 
     @classmethod
     def run(
