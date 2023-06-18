@@ -89,6 +89,7 @@ from .lib.variation import (
     Variation,
     Variations,
 )
+from .lib.variation import Verification
 from .lib.view import (
     View,
     VIEWS,
