@@ -6,7 +6,7 @@ GRAVITATION
 n-body-simulation performance test suite
 https://github.com/pleiszenburg/gravitation
 
-    src/gravitation/cli/logstep.py: step log type
+    src/gravitation/cli/logiteration.py: iteration log type
 
     Copyright (C) 2019-2023 Sebastian M. Ernst <ernst@pleiszenburg.de>
 
@@ -38,8 +38,8 @@ from .debug import typechecked
 
 
 @typechecked
-class StepLog:
-    "represents one single benchmark step"
+class IterationLog:
+    "represents one single benchmark iteration"
 
     def __init__(self, iteration: int, runtime: int, gctime: int, runtime_min: int, gctime_min: int):
         self._iteration = iteration
