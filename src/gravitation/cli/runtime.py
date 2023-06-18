@@ -58,6 +58,6 @@ def runtime(sessions, plot):
     for session in sessions[1:]:
         session_.merge(SessionLog.from_fh(session))
 
-    fig = go.Figure(session_.to_runtime_dict())
+    fig = go.Figure(session_.to_runtime_figure())
     fig.write_html(plot)
     fig.show()

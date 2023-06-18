@@ -188,7 +188,7 @@ class BenchmarkLog:
             for length in self.lengths(include_empty=True)
         })
 
-    def to_runtime_dict(self) -> dict:
+    def to_runtime_trace(self) -> dict:
         "for use with plotting tools"
 
         return dict(

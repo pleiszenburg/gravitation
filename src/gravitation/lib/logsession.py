@@ -68,11 +68,11 @@ class SessionLog:
 
         self._benchmarks.extend(other)
 
-    def to_runtime_dict(self):
+    def to_runtime_figure(self):
         "for use with plotting tools"
 
         traces = [
-            benchmark.to_runtime_dict()
+            benchmark.to_runtime_trace()
             for benchmark in self
         ]
 
