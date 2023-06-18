@@ -160,13 +160,7 @@ class Worker:
         try:
             self._universe.to_hdf5(
                 fn=self._datafile,
-                gn=self._universe.export_name_group(
-                    kernel=self._kernel,
-                    len=len(self._universe),
-                    step=self._iteration,
-                    variation=self._variation.to_dict(),
-                    platform=self._platform.to_dict(),
-                )
+                gn=self._universe.key,
             )
         except Exception as e:
             self._exit(e)
