@@ -31,13 +31,14 @@ specific language governing rights and limitations under the License.
 import click
 
 from ..lib.kernel import KERNELS
+from ..lib.platform import Platform
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-def add_kernel_commands(ctx):
+def add_kernel_commands(command):
     """
     auto-detects kernels and turns them into sub-commands
 
@@ -45,7 +46,7 @@ def add_kernel_commands(ctx):
     """
 
     for name in sorted(KERNELS.keys()):
-        ctx.add_command(_make_kernel_command(name))
+        command.add_command(_make_kernel_command(name))
 
 
 def _make_kernel_command(name: str):
@@ -76,3 +77,20 @@ def _make_kernel_command(name: str):
     )(command)
 
     return command
+
+
+def add_platform_options(command):
+    """
+    add options based on current platform
+    """
+
+    options = Platform.from_current().to_options()
+
+    for option in options:
+        command = click.option(
+            f"--{option.name:s}",
+            type = option.type,
+            default = str(option.choices[0]),
+            show_default = True,
+            required = True,
+        )(command)
