@@ -87,7 +87,6 @@ class Worker:
         self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
         self._variation = variation
 
-        self._iteration = 0
         self._rt = BestRunTimer()  # runtime
         self._gt = BestRunTimer()  # gc time
         self._et = None  # elapsed time, set up later
@@ -140,12 +139,11 @@ class Worker:
         except Exception as e:
             self._exit(e)
 
-        self._iteration += 1
-        if self._iteration in self._save_after_iteration:
+        if self._universe.iteration in self._save_after_iteration:
             self._store()
 
         WorkerLog.log(key = "step", value = StepLog(
-            iteration = self._iteration,
+            iteration = self._universe.iteration,
             runtime=rt_,
             gctime=gt_,
             runtime_min=self._rt.min,
@@ -155,7 +153,7 @@ class Worker:
     def _store(self):
         "store current state of simulation"
 
-        WorkerLog.log(key = "info", value = f"Saving data after step {self._iteration:d} ...")
+        WorkerLog.log(key = "info", value = f"Saving data after step {self._universe.iteration:d} ...")
 
         try:
             self._universe.to_hdf5(
@@ -165,7 +163,7 @@ class Worker:
         except Exception as e:
             self._exit(e)
 
-        WorkerLog.log(key = "info", value = f"Data saved after step {self._iteration:d}.")
+        WorkerLog.log(key = "info", value = f"Data saved after step {self._universe.iteration:d}.")
 
     def _exit(self, error: Optional[Exception] = None):
         "exit worker process, raise WorkerError is bad result"
