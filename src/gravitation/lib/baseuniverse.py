@@ -34,12 +34,12 @@ from math import atan2, cos, pi, sin, sqrt
 from random import gauss, random, shuffle
 from typing import Any, Generator, List, Optional, Tuple
 
-import h5py
+from h5py import File, Group
 import numpy as np
 
 from .const import State, DEFAULT_LEN, DIMS
 from .debug import typechecked
-from .errors import UniverseError
+from .errors import StorageError, UniverseError
 from .mass import PointMass
 from .platform import Platform
 from .variation import Variation
@@ -274,12 +274,20 @@ class BaseUniverse(ABC):
         stores simulation state into HDF5 file
         """
 
-        f = h5py.File(fn, "a")
+        with File(fn, mode = "w") as fh:
+            if gn in fh.keys():
+                raise StorageError("hdf5 group under this name already exists", fn, gn)
+            self.to_hdf5_group(fh.create_group(gn))
 
-        if gn in f.keys():
-            f.close()
-            raise ValueError("hdf5 group under this name already exists", fn, gn)
-        dg = f.create_group(gn)
+    def to_hdf5_group(self, dg: Group):
+        """
+        stores simulation state into HDF5 group handle
+        """
+
+        if len(dg.attrs.keys()) > 0:
+            raise StorageError('group attributes not empty')
+        if len(dg.keys()) > 0:
+            raise StorageError('group not empty')
 
         dtype = dict(float32 = '<f4', float64 = '<f8')[self._variation.getvalue('dtype')]
 
@@ -310,8 +318,6 @@ class BaseUniverse(ABC):
         for k, v in self._meta.items():
             dg.attrs[k] = v
 
-        f.close()
-
     @classmethod
     def from_hdf5(
         cls,
@@ -321,15 +327,27 @@ class BaseUniverse(ABC):
         platform: Optional[Platform] = None,
     ):
         """
-        loads simulation from HDF5 file into object generated from kernel class
+        loads simulation state from HDF5 file
         """
 
-        f = h5py.File(fn, "r")
+        with File(fn, mode = "r") as fh:
+            if gn not in fh.keys():
+                raise StorageError("hdf5 group under this name not present", gn)
+            return cls.from_hdf5_group(fh[gn], variation = variation, platform = platform)
 
-        if gn not in f.keys():
-            f.close()
-            raise ValueError("hdf5 group under this name not present", fn, gn)
-        dg = f[gn]
+    @classmethod
+    def from_hdf5_group(
+        cls,
+        dg: Group,
+        variation: Optional[Variation] = None,
+        platform: Optional[Platform] = None,
+    ):
+        """
+        loads simulation state from HDF5 group handle
+        """
+
+        if len(dg.attrs.keys()) == 0:
+            raise StorageError('group attributes missing')
 
         kwargs = {attr: dg.attrs[attr] for attr in dg.attrs.keys()}
 
@@ -345,7 +363,10 @@ class BaseUniverse(ABC):
 
         universe = cls(scaled=True, **kwargs)
 
-        r, v, m, n = dg["r"], dg["v"], dg["m"], dg["name"]
+        try:
+            r, v, m, n = dg["r"], dg["v"], dg["m"], dg["name"]
+        except KeyError as e:
+            raise StorageError('required data missing from group') from e
 
         for index in range(r.shape[0]):
             universe.create_mass(
@@ -355,8 +376,6 @@ class BaseUniverse(ABC):
                 v=[float(i) for i in v[index, :]],
                 m=float(m[index]),
             )
-
-        f.close()
 
         return universe
 
