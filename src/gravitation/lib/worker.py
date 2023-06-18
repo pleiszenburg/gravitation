@@ -36,7 +36,7 @@ from typing import List, Optional, Tuple
 from .debug import typechecked
 from .errors import WorkerError
 from .kernel import KERNELS
-from .logstep import StepLog
+from .logiteration import IterationLog
 from .logworker import WorkerLog
 from .platform import Platform
 from .timing import BestRunTimer, ElapsedTimer
@@ -73,11 +73,8 @@ class Worker:
             status = "start",
         ).to_dict())
 
-        self._kernel = kernel
-        self._length = length
         self._datafile = datafile
         self._save_after_iteration = save_after_iteration
-        self._read_initial_state = read_initial_state
         self._min_iterations = min_iterations
         if (
             len(self._save_after_iteration) > 0
@@ -85,7 +82,6 @@ class Worker:
         ):
             self._min_iterations = max(self._save_after_iteration)
         self._min_total_runtime = min_total_runtime * 10**9  # convert to ns
-        self._variation = variation
 
         self._rt = BestRunTimer()  # runtime
         self._gt = BestRunTimer()  # gc time
@@ -93,23 +89,23 @@ class Worker:
 
         WorkerLog.log(key = "info", value = "Creating simulation ...")
 
-        KERNELS[self._kernel].load_cls()
+        KERNELS[kernel].load_cls()
 
         try:
-            if self._read_initial_state:
+            if read_initial_state:
                 self._universe = (
-                    KERNELS[self._kernel].cls.from_hdf5(
+                    KERNELS[kernel].cls.from_hdf5(
                         fn=self._datafile,
-                        gn=KERNELS[self._kernel].cls.export_name_group(kernel = 'zero', length = self._length, steps = 0),
-                        variation=self._variation,
+                        gn=KERNELS[kernel].cls.export_name_group(kernel = 'zero', length = length, steps = 0),
+                        variation=variation,
                     )
                 )
-                assert self._length == len(self._universe)
+                assert length == len(self._universe)
             else:
                 self._universe = (
-                    KERNELS[self._kernel].cls.from_galaxy(
-                        length=self._length,
-                        variation=self._variation,
+                    KERNELS[kernel].cls.from_galaxy(
+                        length=length,
+                        variation=variation,
                     )
                 )
         except Exception as e:
@@ -142,7 +138,7 @@ class Worker:
         if self._universe.iteration in self._save_after_iteration:
             self._store()
 
-        WorkerLog.log(key = "step", value = StepLog(
+        WorkerLog.log(key = "step", value = IterationLog(
             iteration = self._universe.iteration,
             runtime=rt_,
             gctime=gt_,
