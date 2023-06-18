@@ -36,9 +36,9 @@ from typing import List, Optional, Tuple
 from .debug import typechecked
 from .errors import WorkerError
 from .kernel import KERNELS
-from .loginfo import InfoLog
 from .logstep import StepLog
 from .logworker import WorkerLog
+from .platform import Platform
 from .timing import BestRunTimer, ElapsedTimer
 from .variation import Variation
 
@@ -62,10 +62,13 @@ class Worker:
         min_iterations: int,
         min_total_runtime: int,
     ):
+
+        self._platform = Platform.from_current()
+
         WorkerLog.log(key = "start", value = WorkerLog(
             kernel = kernel,
             variation = variation,
-            info = InfoLog.from_new(),
+            platform = self._platform,
             length = length,
             status = "start",
         ).to_dict())
@@ -161,7 +164,8 @@ class Worker:
                     kernel=self._kernel,
                     len=len(self._universe),
                     step=self._iteration,
-                    **self._variation.to_dict(),
+                    variation=self._variation.to_dict(),
+                    platform=self._platform.to_dict(),
                 )
             )
         except Exception as e:
