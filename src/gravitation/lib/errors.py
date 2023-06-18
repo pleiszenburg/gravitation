@@ -34,6 +34,9 @@ class BenchmarkLogError(Exception):
 class KernelError(Exception):
     pass
 
+class StorageError(Exception):
+    pass
+
 class TimerError(Exception):
     pass
 
@@ -41,6 +44,9 @@ class UniverseError(Exception):
     pass
 
 class VariationError(Exception):
+    pass
+
+class VerificationError(Exception):
     pass
 
 class ViewError(Exception):
