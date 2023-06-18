@@ -193,8 +193,8 @@ class BaseUniverse(ABC):
 
         return self.export_name_group(
             kernel=self._kernel,
-            len=len(self),
-            step=self._iteration,
+            length=len(self),
+            iteration=self._iteration,
             variation=self._variation.to_dict(),
             platform=self._platform.to_dict(),
         )
