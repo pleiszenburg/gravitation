@@ -68,6 +68,8 @@ from .option import Option
 class Platform:
     "holds information on the worker platform - IMMUTABLE"
 
+    _current = None
+
     def __init__(self, **meta: Union[str, int]):
         self._meta = meta
 
@@ -156,19 +158,22 @@ class Platform:
     def from_current(cls):
         "current platform"
 
-        return cls(
-            python_build=', '.join(python_build()),
-            python_compiler=python_compiler(),
-            python_implementation=python_implementation(),
-            python_version=f'{sys.version_info.major:d}.{sys.version_info.minor:d}.{sys.version_info.micro:d}-{sys.version_info.releaselevel:s}-{sys.version_info.serial:d}',
-            os_system=system(),
-            os_release=release(),
-            os_version=version(),
-            cpu_machine=machine(),
-            cpu_processor=processor(),
-            cpu_physical=Threads.physical.value,
-            cpu_logical=Threads.logical.value,
-            cpu_ram=psutil.virtual_memory().total // 1024**3,
-            cpu_info=cls.get_cpu(),
-            gpu_info=cls.get_gpus(),
-        )
+        if cls._current is None:
+            cls._current = cls(
+                python_build=', '.join(python_build()),
+                python_compiler=python_compiler(),
+                python_implementation=python_implementation(),
+                python_version=f'{sys.version_info.major:d}.{sys.version_info.minor:d}.{sys.version_info.micro:d}-{sys.version_info.releaselevel:s}-{sys.version_info.serial:d}',
+                os_system=system(),
+                os_release=release(),
+                os_version=version(),
+                cpu_machine=machine(),
+                cpu_processor=processor(),
+                cpu_physical=Threads.physical.value,
+                cpu_logical=Threads.logical.value,
+                cpu_ram=psutil.virtual_memory().total // 1024**3,
+                cpu_info=cls.get_cpu(),
+                gpu_info=cls.get_gpus(),
+            )
+
+        return cls._current
