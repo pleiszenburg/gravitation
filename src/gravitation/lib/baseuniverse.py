@@ -29,8 +29,10 @@ specific language governing rights and limitations under the License.
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 from abc import ABC, abstractmethod
+from inspect import getfile
 from json import dumps, loads
 from math import atan2, cos, pi, sin, sqrt
+import os
 from random import gauss, random, shuffle
 from typing import Any, Generator, List, Optional, Tuple
 
@@ -65,6 +67,7 @@ class BaseUniverse(ABC):
         "G",
         "variation",
         "platform",
+        "iteration",
     )
 
     def __init__(
@@ -77,12 +80,14 @@ class BaseUniverse(ABC):
         variation: Variation = Variation.from_default(),  # default variation
         platform: Optional[Platform] = None,  # current platform
         scaled: bool = False,
+        iteration: int = 0,
         **kwargs: Any,  # catch anything else
     ):
         assert T > 0
         assert G > 0
         assert scale_m > 0
         assert scale_r > 0
+        assert iteration >= 0
 
         self._scale_m = scale_m
         self._scale_r = scale_r
@@ -94,6 +99,12 @@ class BaseUniverse(ABC):
         self._variation = variation
         self._platform = Platform.from_current() if platform is None else platform
         self._meta = kwargs
+        self._iteration = iteration
+
+        segments = getfile(type(self)).split(os.path.sep)[::-1]
+        if segments.count('kernel') != 1:
+            raise UniverseError('can not safely determine name of kernel')
+        self._kernel = segments[segments.index('kernel') - 1]
 
     def __iter__(self) -> Generator:
         yield from self._masses
@@ -102,7 +113,43 @@ class BaseUniverse(ABC):
         return len(self._masses)
 
     def __repr__(self) -> str:
-        return f"<Universe len={len(self):d} variation={str(self._variation.to_dict()):s}>"
+        return f"<Universe kernel={self._kernel:s} len={len(self):d} iteration={self._iteration:d} variation={str(self._variation.to_dict()):s}>"
+
+    @property
+    def variation(self) -> Variation:
+        "variation of kernel"
+
+        return self._variation
+
+    @property
+    def platform(self) -> Platform:
+        "plarform"
+
+        return self._platform
+
+    @property
+    def kernel(self) -> str:
+        "kernel name"
+
+        return self._kernel
+
+    @property
+    def state(self) -> State:
+        "state of simulation"
+
+        return self._state
+
+    @property
+    def t(self) -> float:
+        "simulation time (s)"
+
+        return self._t
+
+    @property
+    def T(self) -> float:
+        "simulation interval (s)"
+
+        return self._T
 
     @property
     def G(self) -> float:
@@ -117,15 +164,40 @@ class BaseUniverse(ABC):
         return self._scale_r
 
     @property
+    def scale_m(self) -> float:
+        "scaling factor for masses"
+
+        return self._scale_m
+
+    @property
     def meta(self) -> dict:
         "meta data, e.g. for visualizations"
 
         return self._meta
 
     @property
+    def iteration(self) -> int:
+        "iteration of simulation"
+
+        return self._iteration
+
+    @property
     def masses(self) -> list:
+        "low level access to list of masses - use carefully"
 
         return self._masses
+
+    @property
+    def key(self) -> str:
+        "for set-like operations"
+
+        return self.export_name_group(
+            kernel=self._kernel,
+            len=len(self),
+            step=self._iteration,
+            variation=self._variation.to_dict(),
+            platform=self._platform.to_dict(),
+        )
 
     def add_mass(self, mass: PointMass):
         """
@@ -236,6 +308,7 @@ class BaseUniverse(ABC):
         """
 
         self._t += self._T
+        self._iteration += 1
 
     def assert_not_isnan(self):
         """
