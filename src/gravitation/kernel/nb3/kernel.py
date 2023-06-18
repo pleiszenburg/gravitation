@@ -62,7 +62,7 @@ else:  # gpu:
     'void(f4[:,:],f4[:],f4,f4[:,:])',
     'void(f8[:,:],f8[:],f8,f8[:,:])',
 ], '(m,n),(n),()->(m,n)', nopython = True, target = _target)
-def _step_stage1_guv(r, m, g, a):
+def _iterate_stage1_guv(r, m, g, a):
     for idx in range(0, r.shape[1]):
         for jdx in range(idx + 1, r.shape[1]):
             relative_x = r[0, idx] - r[0, jdx]
@@ -116,10 +116,10 @@ class Universe(BaseUniverse):
         for idx, pm in enumerate(self._masses):
             self._r[:, idx] = pm.r[:]
 
-    def step_stage1(self):
+    def iterate_stage1(self):
         self._a[:, :] = 0.0
 
-        _step_stage1_guv(self._r, self._m, self._Gd, self._a)
+        _iterate_stage1_guv(self._r, self._m, self._Gd, self._a)
 
     def pull_stage1(self):
         for idx, pm in enumerate(self._masses):

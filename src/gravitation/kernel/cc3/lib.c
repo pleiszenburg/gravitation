@@ -406,7 +406,7 @@ static struct __m256d_3d inline _univ_update_pair_f8(
 
 }
 
-void univ_step_stage1_f4(univ_f4 *self)
+void univ_iterate_stage1_f4(univ_f4 *self)
 {
 
     size_t n_mem = sizeof(float)*self->n;
@@ -466,7 +466,7 @@ void univ_step_stage1_f4(univ_f4 *self)
 
 }
 
-void univ_step_stage1_f8(univ_f8 *self)
+void univ_iterate_stage1_f8(univ_f8 *self)
 {
 
     size_t n_mem = sizeof(double)*self->n;

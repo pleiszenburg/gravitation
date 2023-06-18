@@ -158,7 +158,7 @@ static void inline _univ_update_pair_f8(mass_f8 *pm1, mass_f8 *pm2, double g)
 
 }
 
-void univ_step_stage1_f4(univ_f4 *self)
+void univ_iterate_stage1_f4(univ_f4 *self)
 {
 
     for(size_t i = 0; i < self->n; i++) {
@@ -175,7 +175,7 @@ void univ_step_stage1_f4(univ_f4 *self)
 
 }
 
-void univ_step_stage1_f8(univ_f8 *self)
+void univ_iterate_stage1_f8(univ_f8 *self)
 {
 
     for(size_t i = 0; i < self->n; i++) {

@@ -60,7 +60,7 @@ class Universe(BaseUniverse):
         pm1.a[:] = [a - r * a1 for r, a in zip(relative_r, pm1.a)]
         pm2.a[:] = [a + r * a2 for r, a in zip(relative_r, pm2.a)]
 
-    def step_stage1(self):
+    def iterate_stage1(self):
         for pm1_index, pm1 in enumerate(self._masses[:-1]):
             for pm2 in self._masses[pm1_index + 1 :]:
                 self._update_pair(pm1, pm2)

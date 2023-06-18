@@ -48,7 +48,7 @@ class Universe(BaseUniverse):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._step_stage1_c = None
+        self._iterate_stage1_c = None
         self._univ_free_c = None
         self._univ_c = None
         self._masses_c = None
@@ -83,8 +83,8 @@ class Universe(BaseUniverse):
         self._univ_free_c = getattr(lib, f'univ_free_{suffix:s}')
         self._univ_free_c.argtypes = (ctypes.POINTER(Univ),)
 
-        self._step_stage1_c = getattr(lib, f'univ_step_stage1_{suffix:s}')
-        self._step_stage1_c.argtypes = (ctypes.POINTER(Univ),)
+        self._iterate_stage1_c = getattr(lib, f'univ_iterate_stage1_{suffix:s}')
+        self._iterate_stage1_c.argtypes = (ctypes.POINTER(Univ),)
 
         self._univ_c = Univ()
         self._univ_c.n = len(self)
@@ -106,8 +106,8 @@ class Universe(BaseUniverse):
                 self._masses_c[idx].rz,
             ) = pm.r
 
-    def step_stage1(self):
-        self._step_stage1_c(ctypes.pointer(self._univ_c))
+    def iterate_stage1(self):
+        self._iterate_stage1_c(ctypes.pointer(self._univ_c))
 
     def pull_stage1(self):
         for idx, pm in enumerate(self._masses):
