@@ -4,7 +4,7 @@
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 _clean_c:
-	find src/gravitation/kernel/cy* -name '*.c' -exec rm -f {} +
+	find src/gravitation/kernel/cy*/ -name '*.c' -exec rm -f {} +
 
 _clean_bin:
 	find src/ -name '*.dll' -exec rm -f {} +
@@ -12,10 +12,6 @@ _clean_bin:
 
 _clean_octave:
 	find src/ -name 'octave-workspace' -exec rm -f {} +
-
-_clean_plot:
-	find src/ -name '*.htm' -exec rm -f {} +
-	find src/ -name '*.html' -exec rm -f {} +
 
 _clean_py:
 	find src/ -name '*.pyc' -exec rm -f {} +
@@ -40,7 +36,6 @@ clean:
 	make _clean_py
 #	make _clean_c
 	make _clean_bin
-	make _clean_plot
 
 docs:
 	@(cd docs; make clean; make html)
@@ -49,7 +44,7 @@ ext:
 	python setup.py build_ext --inplace
 
 install:
-	pip install -U -e .[dev]
+	pip install -e .[dev]
 
 release_clean:
 	make clean
