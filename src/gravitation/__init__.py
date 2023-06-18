@@ -71,8 +71,8 @@ from .lib.kernel import (
     KERNELS,
 )
 from .lib.logbenchmark import BenchmarkLog
+from .lib.logiteration import IterationLog
 from .lib.logsession import SessionLog
-from .lib.logstep import StepLog
 from .lib.logworker import WorkerLog
 from .lib.mass import PointMass
 from .lib.option import Option
@@ -91,7 +91,7 @@ from .lib.variation import (
     Variation,
     Variations,
 )
-from .lib.variation import Verification
+from .lib.verification import Verification
 from .lib.view import (
     View,
     VIEWS,
