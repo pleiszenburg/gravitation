@@ -69,11 +69,12 @@ from .lib.kernel import (
     KERNELS,
 )
 from .lib.logbenchmark import BenchmarkLog
-from .lib.loginfo import InfoLog
 from .lib.logsession import SessionLog
 from .lib.logstep import StepLog
 from .lib.logworker import WorkerLog
 from .lib.mass import PointMass
+from .lib.option import Option
+from .lib.platform import Platform
 from .lib.shm import (
     ShmPool,
     Param,
@@ -85,7 +86,6 @@ from .lib.timing import (
     ElapsedTimer,
 )
 from .lib.variation import (
-    Option,
     Variation,
     Variations,
 )
