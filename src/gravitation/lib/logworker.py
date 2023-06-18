@@ -36,8 +36,8 @@ from typing import Any, Dict, Generator, List, Optional
 
 from .debug import typechecked
 from .errors import BenchmarkLogError
-from .loginfo import InfoLog
 from .logstep import StepLog
+from .platform import Platform
 from .variation import Variation
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -52,14 +52,14 @@ class WorkerLog:
     def __init__(self,
         kernel: str,
         variation: Variation,
-        info: InfoLog,
+        platform: Platform,
         status: str,
         length: int,
         steps: Optional[Dict[int, StepLog]] = None,
     ):
         self._kernel = kernel
         self._variation = variation
-        self._info = info
+        self._platform = platform
         self._status = status
         self._length = length
         self._steps = {} if steps is None else steps
@@ -89,10 +89,10 @@ class WorkerLog:
         return self._variation
 
     @property
-    def info(self) -> InfoLog:
-        "info"
+    def platform(self) -> Platform:
+        "platform"
 
-        return self._info
+        return self._platform
 
     @property
     def status(self) -> str:
@@ -183,7 +183,7 @@ class WorkerLog:
         return all((
             self.kernel == other.kernel,
             self.variation == other.variation,
-            self.info == other.info,
+            self.platform == other.platform,
         ))
 
     def to_dict(self) -> dict:
@@ -192,7 +192,7 @@ class WorkerLog:
         return dict(
             kernel = self._kernel,
             variation = self._variation.to_dict(),
-            info = self._info.to_dict(),
+            platform = self._platform.to_dict(),
             status = self._status,
             length = self._length,
             steps = {step.iteration: step.to_dict() for step in self},
@@ -203,7 +203,7 @@ class WorkerLog:
         cls,
         kernel: str,
         variation: dict,
-        info: dict,
+        platform: dict,
         status: str,
         length: int,
         steps: Dict[int, dict],
@@ -213,7 +213,7 @@ class WorkerLog:
         return cls(
             kernel = kernel,
             variation = Variation.from_dict(**variation),
-            info = InfoLog.from_dict(**info),
+            platform = Platform.from_dict(**platform),
             status = status,
             length = length,
             steps = {int(iteration): StepLog.from_dict(**step) for iteration, step in steps.items()},
