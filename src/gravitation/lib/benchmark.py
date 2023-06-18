@@ -31,7 +31,6 @@ specific language governing rights and limitations under the License.
 from io import TextIOWrapper
 from typing import Generator, List
 
-from .baseuniverse import BaseUniverse
 from .const import Display, Stream
 from .debug import typechecked
 from .errors import BenchmarkLogError
@@ -40,6 +39,7 @@ from .logbenchmark import BenchmarkLog
 from .logworker import WorkerLog
 from .proc import run_command
 from .worker import Worker
+from .zerouniverse import UniverseZero
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ROUTINES
@@ -123,15 +123,6 @@ class Benchmark:
     @classmethod
     def common_initial_states(cls, start: int, stop: int, datafile: int):
         """create common initial states for benchmarks for later evaluation of results"""
-
-        class UniverseZero(BaseUniverse):
-            "Generating common start universe"
-
-            def iterate_stage1(self):
-                "not required here"
-
-            def _get_kernel(self):
-                return "zero"
 
         for length in cls.sq_range(start, stop):
             print(
