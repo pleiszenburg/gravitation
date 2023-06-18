@@ -41,6 +41,7 @@ from .const import State, DEFAULT_LEN, DIMS
 from .debug import typechecked
 from .errors import UniverseError
 from .mass import PointMass
+from .platform import Platform
 from .variation import Variation
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -63,6 +64,7 @@ class BaseUniverse(ABC):
         "T",
         "G",
         "variation",
+        "platform",
     )
 
     def __init__(
@@ -73,6 +75,7 @@ class BaseUniverse(ABC):
         scale_m: float = 1.0,  # scaling factor for mass (for kg)
         scale_r: float = 1.0,  # scaling factor for distances (for m)
         variation: Variation = Variation.from_default(),  # default variation
+        platform: Optional[Platform] = None,  # current platform
         scaled: bool = False,
         **kwargs: Any,  # catch anything else
     ):
@@ -89,10 +92,11 @@ class BaseUniverse(ABC):
         self._masses = []
         self._state = State.preinit
         self._variation = variation
+        self._platform = Platform.from_current() if platform is None else platform
         self._meta = kwargs
 
     def __iter__(self) -> Generator:
-        return (p for p in self._masses)
+        yield from self._masses
 
     def __len__(self) -> int:
         return len(self._masses)
@@ -300,7 +304,7 @@ class BaseUniverse(ABC):
 
         for attr in self._ATTRS:
             value = getattr(self, f"_{attr:s}")
-            if attr == 'variation':
+            if attr in ('variation', 'platform'):
                 value = value.to_json()
             dg.attrs[attr] = value
         for k, v in self._meta.items():
@@ -309,8 +313,16 @@ class BaseUniverse(ABC):
         f.close()
 
     @classmethod
-    def from_hdf5(cls, fn: str, gn: str, variation: Optional[Variation] = None):
-        """loads simulation from HDF5 file into object generated from kernel class"""
+    def from_hdf5(
+        cls,
+        fn: str,
+        gn: str,
+        variation: Optional[Variation] = None,
+        platform: Optional[Platform] = None,
+    ):
+        """
+        loads simulation from HDF5 file into object generated from kernel class
+        """
 
         f = h5py.File(fn, "r")
 
@@ -325,6 +337,11 @@ class BaseUniverse(ABC):
             kwargs['variation'] = variation
         else:
             kwargs['variation'] = Variation.from_json(kwargs['variation'])
+
+        if platform is not None:
+            kwargs['platform'] = platform
+        else:
+            kwargs['platform'] = Platform.from_json(kwargs['platform'])
 
         universe = cls(scaled=True, **kwargs)
 
@@ -362,6 +379,7 @@ class BaseUniverse(ABC):
         scale_m: float = 1.0e-30,
         scale_r: float = 1.0e-10,
         variation: Variation = Variation.from_default(),
+        platform: Optional[Platform] = None,
         length: int = DEFAULT_LEN,
         r: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         v: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -380,6 +398,7 @@ class BaseUniverse(ABC):
             scale_m=scale_m,
             scale_r=scale_r,
             variation=variation,
+            platform=Platform.from_current() if platform is None else platform,
         )
 
         universe.create_mass(
