@@ -58,9 +58,11 @@ from .lib.debug import (
 from .lib.errors import (
     BenchmarkLogError,
     KernelError,
+    StorageError,
     TimerError,
     UniverseError,
     VariationError,
+    VerificationError,
     ViewError,
     WorkerError,
 )
