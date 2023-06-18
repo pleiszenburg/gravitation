@@ -36,7 +36,7 @@ from typing import Any, Dict, Generator, List, Optional
 
 from .debug import typechecked
 from .errors import BenchmarkLogError
-from .logstep import StepLog
+from .logiteration import IterationLog
 from .platform import Platform
 from .variation import Variation
 
@@ -47,7 +47,7 @@ from .variation import Variation
 
 @typechecked
 class WorkerLog:
-    "represents a worker run: one length, multiple steps"
+    "represents a worker run: one length, multiple iterations"
 
     def __init__(self,
         kernel: str,
@@ -55,26 +55,26 @@ class WorkerLog:
         platform: Platform,
         status: str,
         length: int,
-        steps: Optional[Dict[int, StepLog]] = None,
+        iterations: Optional[Dict[int, IterationLog]] = None,
     ):
         self._kernel = kernel
         self._variation = variation
         self._platform = platform
         self._status = status
         self._length = length
-        self._steps = {} if steps is None else steps
+        self._iterations = {} if iterations is None else iterations
 
     def __len__(self) -> int:
-        return len(self._steps)
+        return len(self._iterations)
 
-    def __getitem__(self, iteration: int) -> StepLog:
+    def __getitem__(self, iteration: int) -> IterationLog:
         try:
-            return self._steps[iteration]
+            return self._iterations[iteration]
         except KeyError as e:
             raise BenchmarkLogError('iteration not present in log') from e
 
     def __iter__(self) -> Generator:
-        return (self._steps[iteration] for iteration in self.iterations())
+        return (self._iterations[iteration] for iteration in self.iterations())
 
     @property
     def kernel(self) -> str:
@@ -124,7 +124,7 @@ class WorkerLog:
         if len(self) == 0:
             raise BenchmarkLogError('no data available')
 
-        return self._steps[self.iterations()[-1]].runtime_min
+        return self._iterations[self.iterations()[-1]].runtime_min
 
     @property
     def gctime_min(self) -> int:
@@ -133,25 +133,25 @@ class WorkerLog:
         if len(self) == 0:
             raise BenchmarkLogError('no data available')
 
-        return self._steps[self.iterations()[-1]].gctime_min
+        return self._iterations[self.iterations()[-1]].gctime_min
 
-    def add(self, step: StepLog):
-        "add step to worker run"
+    def add(self, iteration: IterationLog):
+        "add iteration to worker run"
 
         if self._status == 'ok':
             raise BenchmarkLogError('trying to add to stopped worker run that was ok')
         if self._status not in ('start', 'running'):
             raise BenchmarkLogError('trying to add to stopped worker run that errored')
-        if step.iteration in self.iterations():
+        if iteration.iteration in self.iterations():
             raise BenchmarkLogError('trying to add step with iteration that is already present')
 
-        self._steps[step.iteration] = step
+        self._iterations[iteration.iteration] = iteration
         self._status = 'running'
 
     def iterations(self) -> List[int]:
         "sorted generator of available iterations"
 
-        return sorted(self._steps.keys())
+        return sorted(self._iterations.keys())
 
     def live(self, key: str, value: Any, time: int):
         "handle incoming live stream of logs"
@@ -163,7 +163,7 @@ class WorkerLog:
             return  # nothing to do
 
         if key == 'step':
-            self.add(StepLog.from_dict(**value))
+            self.add(IterationLog.from_dict(**value))
             return
 
         if key == 'stop':
@@ -195,7 +195,7 @@ class WorkerLog:
             platform = self._platform.to_dict(),
             status = self._status,
             length = self._length,
-            steps = {step.iteration: step.to_dict() for step in self},
+            iterations = {iteration.iteration: iteration.to_dict() for iteration in self},
         )
 
     @classmethod
@@ -206,7 +206,7 @@ class WorkerLog:
         platform: dict,
         status: str,
         length: int,
-        steps: Dict[int, dict],
+        iterations: Dict[int, dict],
     ):
         "import from dict"
 
@@ -216,7 +216,7 @@ class WorkerLog:
             platform = Platform.from_dict(**platform),
             status = status,
             length = length,
-            steps = {int(iteration): StepLog.from_dict(**step) for iteration, step in steps.items()},
+            iterations = {int(idx): IterationLog.from_dict(**iteration) for idx, iteration in iterations.items()},
         )
 
     @classmethod
@@ -245,7 +245,7 @@ class WorkerLog:
             elif key == 'step':
                 if run is None:
                     raise BenchmarkLogError('trying to add to worker run that has not been started')
-                run.add(StepLog.from_dict(**value))
+                run.add(IterationLog.from_dict(**value))
             elif key == 'stop':
                 if run is None:
                     raise BenchmarkLogError('trying to stop a worker run that has been stopped earlier')
