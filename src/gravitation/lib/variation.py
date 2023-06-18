@@ -28,9 +28,8 @@ specific language governing rights and limitations under the License.
 # IMPORT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from enum import Enum
 from json import dumps, loads
-from typing import Any, Generator, Optional, Tuple, Type
+from typing import Any, Generator, Optional, Tuple
 
 from .const import (
     Dtype,
@@ -42,6 +41,7 @@ from .const import (
 )
 from .debug import typechecked
 from .errors import VariationError
+from .option import Option
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # CLASSES
@@ -49,56 +49,8 @@ from .errors import VariationError
 
 
 @typechecked
-class Option:
-    "Option for use with click"
-
-    def __init__(self, name: str, choice: Any):
-        self._name = name
-        self._type = type(choice)
-        self._choices = {choice}
-
-    def __repr__(self) -> str:
-        return f'<Option name={self._name:s} type={self._type.__name__:s} choices={str(self._choices):s}>'
-
-    def __len__(self) -> int:
-        return len(self._choices)
-
-    def __contains__(self, choice: Any) -> bool:
-        return choice in self._choices
-
-    @property
-    def name(self) -> str:
-        "name of option"
-        return self._name
-
-    @property
-    def type(self) -> Type:
-        "type of option"
-        return self._type
-
-    @property
-    def choices(self) -> Tuple[Any]:
-        "all choices of option, sorted; stripped if enum"
-        return tuple(sorted(
-            getattr(choice, 'name', choice)
-            for choice in self._choices
-        ))
-
-    def add(self, choice: Any):
-        "add choice"
-        if not isinstance(choice, self._type):
-            raise TypeError('wrong choice type for option')
-        self._choices.add(choice)
-
-    def value_to_type(self, value: Any) -> Any:
-        if issubclass(self._type, Enum):
-            return self._type[value]
-        return self._type(value)
-
-
-@typechecked
 class Variation:
-    "Variation of how a kernel can operate"
+    "Variation of how a kernel can operate - IMMUTABLE"
 
     _ENUMS = (Dtype, Target, Threads)
 
@@ -139,35 +91,51 @@ class Variation:
 
     @property
     def key(self) -> Tuple[str, ...]:
+        "unique immutable key for set-like operations"
+
         return tuple(self[field] for field in self.keys())
 
     def keys(self) -> Generator:
+        "names of fields in meta data"
+
         yield from (enum.__name__.lower() for enum in self._ENUMS)
         yield from sorted(self._meta.keys())
 
     def to_json(self) -> str:
+        "export as json"
+
         return dumps(self.to_dict(), sort_keys = True)
 
     def to_dict(self) -> dict:
+        "export as dict"
+
         return {field: self.getvalue(field) for field in self.keys()}
 
     def getvalue(self, field: str) -> Any:
+        "strips enum fields into json-serializable values"
+
         if field in (enum.__name__.lower() for enum in self._ENUMS):
             return self[field].name
         return self[field]
 
     @classmethod
     def from_json(cls, raw: str):
+        "import from json"
+
         return cls.from_dict(**loads(raw))
 
     @classmethod
     def from_dict(cls, **kwargs: Any):
+        "import from dict"
+
         for enum in cls._ENUMS:
             kwargs[enum.__name__.lower()] = enum[kwargs[enum.__name__.lower()]]
         return cls(**kwargs)
 
     @classmethod
     def from_default(cls):
+        "default variation"
+
         return cls(
             dtype = DEFAULT_DTYPE,
             target = DEFAULT_TARGET,
@@ -217,6 +185,8 @@ class Variations:
             print(f'- {idx:d}: {repr(variation):s}')
 
     def to_options(self) -> Tuple[Option, ...]:
+        "export to tuples that can be used to generate click command options"
+
         options = {}
         for variation in self:
             for field in variation.keys():
