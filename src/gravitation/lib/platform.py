@@ -110,7 +110,7 @@ class Platform:
     def to_options(self) -> Tuple[Option, ...]:
         "export to tuples that can be used to generate click command options"
 
-        return tuple(Option(k, v) for k, v in self._meta)
+        return tuple(Option(k, v) for k, v in self._meta.items())
 
     @staticmethod
     def get_cpu() -> str:
