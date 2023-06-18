@@ -96,7 +96,7 @@ class Worker:
                 self._universe = (
                     KERNELS[kernel].cls.from_hdf5(
                         fn=self._datafile,
-                        gn=KERNELS[kernel].cls.export_name_group(kernel = 'zero', length = length, steps = 0),
+                        gn=KERNELS[kernel].cls.export_name_group(kernel = 'zero', length = length, iteration = 0),
                         variation=variation,
                     )
                 )
@@ -113,15 +113,15 @@ class Worker:
 
         WorkerLog.log(key = "info", value = "Simulation created.")
 
-    def _step(self):
-        "run one simulation step, measure times, log values"
+    def _iterate(self):
+        "run one simulation iteration, measure times, log values"
 
         try:
             self._universe.push_stage1()
             gc.collect()
             self._universe.gc_collect()
             self._rt.start()
-            self._universe.step_stage1()
+            self._universe.iterate_stage1()
             rt_ = self._rt.stop()
             self._gt.start()
             gc.collect()
@@ -130,7 +130,7 @@ class Worker:
             self._exit(e)
 
         try:
-            self._universe.step(stage1=False)
+            self._universe.iterate(stage1=False)
             self._universe.assert_not_isnan()
         except Exception as e:
             self._exit(e)
@@ -171,7 +171,7 @@ class Worker:
             WorkerLog.log(key = "stop", value = "ok")
             return
 
-        WorkerLog.log(key = "exit", value = traceback.format_exc())
+        WorkerLog.log(key = "stop", value = traceback.format_exc())
         raise WorkerError('worker failed') from error
 
     def run(self):
@@ -188,24 +188,24 @@ class Worker:
 
         # required min runs
         for _ in range(self._min_iterations):
-            self._step()
+            self._iterate()
 
         # does elapsed time satisfy min_total_runtime?
         et_ = self._et()
         if et_ >= self._min_total_runtime:
-            WorkerLog.log(key = "info", value = "Minimum steps sufficient.")
+            WorkerLog.log(key = "info", value = "Minimum iterations sufficient.")
             self._exit()
             return
 
-        WorkerLog.log(key = "info", value = "Extra steps required.")
+        WorkerLog.log(key = "info", value = "Extra iterations required.")
         time_remaining = self._min_total_runtime - et_
         iterations_remaining = time_remaining // et_ * self._min_iterations
 
         # required extra runs until min_total_runtime
         for _ in range(iterations_remaining):
-            self._step()
+            self._iterate()
 
-        WorkerLog.log(key = "info", value = "Extra steps finished.")
+        WorkerLog.log(key = "info", value = "Extra iterations finished.")
         self._exit()
 
     @staticmethod
