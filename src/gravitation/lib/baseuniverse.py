@@ -99,12 +99,9 @@ class BaseUniverse(ABC):
         self._variation = variation
         self._platform = Platform.from_current() if platform is None else platform
         self._meta = kwargs
-        self._iteration = iteration
+        self._iteration = int(iteration)  # HDF5 stores as int64, convert back to Python int
 
-        segments = getfile(type(self)).split(os.path.sep)[::-1]
-        if segments.count('kernel') != 1:
-            raise UniverseError('can not safely determine name of kernel')
-        self._kernel = segments[segments.index('kernel') - 1]
+        self._kernel = self._get_kernel()
 
     def __iter__(self) -> Generator:
         yield from self._masses
@@ -199,6 +196,14 @@ class BaseUniverse(ABC):
             platform=self._platform.to_dict(),
         )
 
+    def _get_kernel(self) -> str:
+        "get name of kernel"
+
+        segments = getfile(type(self)).split(os.path.sep)[::-1]
+        if segments.count('kernel') != 1:
+            raise UniverseError('can not safely determine name of kernel')
+        return segments[segments.index('kernel') - 1]
+
     def add_mass(self, mass: PointMass):
         """
         add point mass object to universe
@@ -235,7 +240,7 @@ class BaseUniverse(ABC):
     def start(self):
         """
         starts simulation
-        MUST BE CALLED ONCE: AFTER ADDING OBJECTS AND BEFORE STEPPING!
+        MUST BE CALLED ONCE: AFTER ADDING OBJECTS AND BEFORE ITERATING!
         """
 
         if self._state is State.started:
@@ -252,9 +257,9 @@ class BaseUniverse(ABC):
         REIMPLEMENT IF KERNEL-SPECIFIC INITIALIZATION IS REQUIRED!
         """
 
-    def step(self, stage1: bool = True):
+    def iterate(self, stage1: bool = True):
         """
-        runs all three stages of one simulation (time-) step
+        runs all three stages of one simulation (time-) iteration
         """
 
         if self._state is State.preinit:
@@ -264,11 +269,11 @@ class BaseUniverse(ABC):
 
         if stage1:
             self.push_stage1()
-            self.step_stage1()
+            self.iterate_stage1()
         self.pull_stage1()
-        self.step_stage2()
+        self.iterate_stage2()
         self.pull_stage2()
-        self.step_stage3()
+        self.iterate_stage3()
 
     def push_stage1(self):
         """
@@ -286,25 +291,25 @@ class BaseUniverse(ABC):
         """
 
     @abstractmethod
-    def step_stage1(self):
+    def iterate_stage1(self):
         """
-        runs stage 1 (computes accelerations) of one simulation (time-) step
+        runs stage 1 (computes accelerations) of one simulation (time-) iteration
         MUST BE REIMPLEMENTED!
         """
 
         raise NotImplementedError()
 
-    def step_stage2(self):
+    def iterate_stage2(self):
         """
-        runs stage 2 (computes velocities and locations) of one simulation (time-) step
+        runs stage 2 (computes velocities and locations) of one simulation (time-) iteration
         """
 
         for pm in self._masses:
             pm.move(self._T)
 
-    def step_stage3(self):
+    def iterate_stage3(self):
         """
-        runs stage 3 (increments simulation time) of one simulation (time-) step, assert nan
+        runs stage 3 (increments simulation time) of one simulation (time-) iteration, assert nan
         """
 
         self._t += self._T
@@ -347,7 +352,7 @@ class BaseUniverse(ABC):
         stores simulation state into HDF5 file
         """
 
-        with File(fn, mode = "w") as fh:
+        with File(fn, mode = "a") as fh:
             if gn in fh.keys():
                 raise StorageError("hdf5 group under this name already exists", fn, gn)
             self.to_hdf5_group(fh.create_group(gn))
